@@ -29,6 +29,7 @@
 
 #include <selforg/matrix.h>
 #include <selforg/ringbuffer.h>
+#include <numeric>
 
 /// configuration object for DEP controller. Use DEP::getDefaultConf().
 struct DEPConf {

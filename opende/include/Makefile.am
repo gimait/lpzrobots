@@ -1,1 +1,1 @@
-SUBDIRS = ode-dbl drawstuff
+SUBDIRS = ode drawstuff

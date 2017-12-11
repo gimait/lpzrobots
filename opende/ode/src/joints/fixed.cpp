@@ -21,6 +21,8 @@
  *************************************************************************/
 
 
+#include <ode/odeconfig.h>
+#include "config.h"
 #include "fixed.h"
 #include "joint_internal.h"
 
@@ -30,12 +32,19 @@
 // fixed joint
 
 dxJointFixed::dxJointFixed ( dxWorld *w ) :
-        dxJoint ( w )
+    dxJoint ( w )
 {
     dSetZero ( offset, 4 );
     dSetZero ( qrel, 4 );
     erp = world->global_erp;
     cfm = world->global_cfm;
+}
+
+
+void 
+dxJointFixed::getSureMaxInfo( SureMaxInfo* info )
+{
+    info->max_m = 6;
 }
 
 
@@ -48,48 +57,51 @@ dxJointFixed::getInfo1 ( dxJoint::Info1 *info )
 
 
 void
-dxJointFixed::getInfo2 ( dxJoint::Info2 *info )
+dxJointFixed::getInfo2 ( dReal worldFPS, dReal worldERP, 
+    int rowskip, dReal *J1, dReal *J2,
+    int pairskip, dReal *pairRhsCfm, dReal *pairLoHi, 
+    int *findex )
 {
-    int s = info->rowskip;
-
     // Three rows for orientation
-    setFixedOrientation ( this, info, qrel, 3 );
+    setFixedOrientation ( this, worldFPS, worldERP, 
+        rowskip, J1 + dSA__MAX * rowskip, J2 + dSA__MAX * rowskip,
+        pairskip, pairRhsCfm + dSA__MAX * pairskip, qrel );
 
     // Three rows for position.
-    // set jacobian
-    info->J1l[0] = 1;
-    info->J1l[s+1] = 1;
-    info->J1l[2*s+2] = 1;
+    // set Jacobian
+    J1[GI2_JLX] = 1;
+    J1[rowskip + GI2_JLY] = 1;
+    J1[2 * rowskip + GI2_JLZ] = 1;
 
-    info->erp = erp;
-    info->cfm[0] = cfm;
-    info->cfm[1] = cfm;
-    info->cfm[2] = cfm;
+    dReal k = worldFPS * this->erp;
+    dxBody *b0 = node[0].body, *b1 = node[1].body;
 
     dVector3 ofs;
-    dMULTIPLY0_331 ( ofs, node[0].body->posr.R, offset );
-    if ( node[1].body )
-    {
-        dCROSSMAT ( info->J1a, ofs, s, + , - );
-        info->J2l[0] = -1;
-        info->J2l[s+1] = -1;
-        info->J2l[2*s+2] = -1;
+    dMultiply0_331 ( ofs, b0->posr.R, offset );
+
+    if ( b1 ) {
+        dSetCrossMatrixPlus( J1 + GI2__JA_MIN, ofs, rowskip );
+
+        J2[GI2_JLX] = -1;
+        J2[rowskip + GI2_JLY] = -1;
+        J2[2 * rowskip + GI2_JLZ] = -1;
     }
 
     // set right hand side for the first three rows (linear)
-    dReal k = info->fps * info->erp;
-    if ( node[1].body )
-    {
-        for ( int j = 0; j < 3; j++ )
-            info->c[j] = k * ( node[1].body->posr.pos[j]
-                               - node[0].body->posr.pos[j]
-                               + ofs[j] );
+    if ( b1 ) {
+        for ( int j = 0, currPairSkip = 0; j < 3; currPairSkip += pairskip, ++j ) {
+            pairRhsCfm[currPairSkip + GI2_RHS] = k * ( b1->posr.pos[j] - b0->posr.pos[j] + ofs[j] );
+        }
+    } else {
+        for ( int j = 0, currPairSkip = 0; j < 3; currPairSkip += pairskip, ++j ) {
+            pairRhsCfm[currPairSkip + GI2_RHS] = k * ( offset[j] - b0->posr.pos[j] );
+        }
     }
-    else
-    {
-        for ( int j = 0; j < 3; j++ )
-            info->c[j] = k * ( offset[j] - node[0].body->posr.pos[j] );
-    }
+
+    dReal cfm = this->cfm;
+    pairRhsCfm[GI2_CFM] = cfm;
+    pairRhsCfm[pairskip + GI2_CFM] = cfm;
+    pairRhsCfm[2 * pairskip + GI2_CFM] = cfm;
 }
 
 
@@ -110,7 +122,7 @@ void dJointSetFixed ( dJointID j )
             dReal ofs[4];
             for ( i = 0; i < 4; i++ )
                 ofs[i] = joint->node[0].body->posr.pos[i] - joint->node[1].body->posr.pos[i];
-            dMULTIPLY1_331 ( joint->offset, joint->node[0].body->posr.R, ofs );
+            dMultiply1_331 ( joint->offset, joint->node[0].body->posr.R, ofs );
         }
         else
         {

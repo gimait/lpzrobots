@@ -1,8 +1,30 @@
+/*************************************************************************
+ *                                                                       *
+ * Open Dynamics Engine, Copyright (C) 2001,2002 Russell L. Smith.       *
+ * All rights reserved.  Email: russ@q12.org   Web: www.q12.org          *
+ *                                                                       *
+ * This library is free software; you can redistribute it and/or         *
+ * modify it under the terms of EITHER:                                  *
+ *   (1) The GNU Lesser General Public License as published by the Free  *
+ *       Software Foundation; either version 2.1 of the License, or (at  *
+ *       your option) any later version. The text of the GNU Lesser      *
+ *       General Public License is included with this library in the     *
+ *       file LICENSE.TXT.                                               *
+ *   (2) The BSD-style license that is included with this library in     *
+ *       the file LICENSE-BSD.TXT.                                       *
+ *                                                                       *
+ * This library is distributed in the hope that it will be useful,       *
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of        *
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the files    *
+ * LICENSE.TXT and LICENSE-BSD.TXT for more details.                     *
+ *                                                                       *
+ *************************************************************************/
+
 #include <iostream>
 #include <set>
 #include <algorithm>
 #include <functional>
-#include <ode-dbl/ode.h>
+#include <ode/ode.h>
 #include <drawstuff/drawstuff.h>
 #include "texturepath.h"
 
@@ -33,7 +55,7 @@ struct Box {
         geom(*space, 0.2, 0.2, 0.2)
     {
         dMass mass;
-        mass.setBox(1, 0.2, 0.2, 0.2);
+        mass.setBox(10, 0.2, 0.2, 0.2);
         body.setMass(mass);
         geom.setData(this);
         geom.setBody(body);
@@ -57,7 +79,7 @@ void dropBox()
     
     dReal px = (rand() / float(RAND_MAX)) * 2 - 1;
     dReal py = (rand() / float(RAND_MAX)) * 2 - 1;
-    dReal pz = 3;
+    dReal pz = 2.5;
     box->body.setPosition(px, py, pz);
     
     boxes.insert(box);
@@ -80,7 +102,7 @@ void removeQueued()
 }
 
 
-void nearCallback(void *data, dGeomID g1, dGeomID g2)
+void nearCallback(void *, dGeomID g1, dGeomID g2)
 {
     if (g1 == ground->id()) {
         queueRemoval(g2);
@@ -113,19 +135,19 @@ void
 simLoop(int pause)
 {
     if (!pause) {
-        const dReal timestep = 0.005;
+        const dReal timestep = 0.04;
 
         // this does a hard-coded circular motion animation
         static float t=0;
         t += timestep/4;
         if (t > 2*M_PI)
             t = 0;
-        dReal px = cos(t);
-        dReal py = sin(t);
-        dReal vx = -sin(t)/4;
-        dReal vy = cos(t)/4;
-        kbody->setPosition(px, py, .5);
-        kbody->setLinearVel(vx, vy, 0);
+        dVector3 next_pos = { dCos(t), dSin(t), REAL(0.5)};
+        dVector3 vel;
+        // vel = (next_pos - cur_pos) / timestep
+        dSubtractVectors3(vel, next_pos, kbody->getPosition());
+        dScaleVector3(vel, 1/timestep);
+        kbody->setLinearVel(vel);
         // end of hard-coded animation
         
         space->collide(0, nearCallback);

@@ -23,10 +23,11 @@
 #if defined(WIN32) || defined(__CYGWIN__)// this prevents warnings when dependencies built
 #include <windows.h>
 #endif
-#include <ode-dbl/odeconfig.h>
-#include "config.h"
+#include <process.h>
+#include <ode/odeconfig.h>
 #include <GL/gl.h>
 
+#include "config.h"
 #include "resource.h"
 #include "internal.h"
 
@@ -54,6 +55,7 @@ static void dsWarning (const char *msg, ...)
   va_list ap;
   va_start (ap,msg);
   errorBox ("Warning",msg,ap);
+  va_end (ap);
 }
 
 
@@ -62,6 +64,7 @@ extern "C" void dsError (const char *msg, ...)
   va_list ap;
   va_start (ap,msg);
   errorBox ("Error",msg,ap);
+  va_end (ap);
   exit (1);
 }
 
@@ -71,6 +74,7 @@ extern "C" void dsDebug (const char *msg, ...)
   va_list ap;
   va_start (ap,msg);
   errorBox ("INTERNAL ERROR",msg,ap);
+  va_end (ap);
   // *((char *)0) = 0;	 ... commit SEGVicide ?
   abort();
   exit (1);	  // should never get here, but just in case...
@@ -82,6 +86,7 @@ extern "C" void dsPrint (const char *msg, ...)
   va_list ap;
   va_start (ap,msg);
   vprintf (msg,ap);
+  va_end (ap);
 }
 
 //***************************************************************************
@@ -116,7 +121,7 @@ static void setupRendererGlobals()
 }
 
 
-static DWORD WINAPI renderingThread (LPVOID lpParam)
+static unsigned CALLBACK renderingThread (LPVOID lpParam)
 {
   // create openGL context and make it current
   HGLRC glc = wglCreateContext (renderer_dc);
@@ -425,14 +430,14 @@ void dsPlatformSimLoop (int window_width, int window_height,
   renderer_height = window_height;
   renderer_fn = fn;
 
-  DWORD threadId, thirdParam = 0;
+  unsigned threadId;
   HANDLE hThread;
 
-  hThread = CreateThread(
+  hThread = (HANDLE)_beginthreadex(
 	NULL,			     // no security attributes
 	0,			     // use default stack size
-	renderingThread,	     // thread function
-	&thirdParam,		     // argument to thread function
+	&renderingThread,	     // thread function
+	NULL,		     // argument to thread function
 	0,			     // use default creation flags
 	&threadId);		     // returns the thread identifier
 

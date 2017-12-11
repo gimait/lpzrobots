@@ -21,43 +21,50 @@
  *************************************************************************/
 
 
-#ifndef _ODE_JOINT_NTERNAL_H_
+#ifndef _ODE_JOINT_INTERNAL_H_
 #define _ODE_JOINT_INTERNAL_H_
 
-#include "config.h"
 
-#include <ode-dbl/matrix.h>
-#include <ode-dbl/odemath.h>
-#include <ode-dbl/rotation.h>
-#include <ode-dbl/objects.h>
+#include <ode/rotation.h>
+#include <ode/objects.h>
+#include "matrix.h"
+#include "odemath.h"
+
 
 #define checktype(j,t) dUASSERT(j->type() == dJointType##t, \
-                                "joint type is not " #t)
+    "joint type is not " #t)
 
 
-void setBall( dxJoint *joint, dxJoint::Info2 *info,
-              dVector3 anchor1, dVector3 anchor2 );
-void setBall2( dxJoint *joint, dxJoint::Info2 *info,
-               dVector3 anchor1, dVector3 anchor2,
-               dVector3 axis, dReal erp1 );
+void setBall( dxJoint *joint, dReal fps, dReal erp, 
+    int rowskip, dReal *J1, dReal *J2,
+    int pairskip, dReal *pairRhsCfm, 
+    dVector3 anchor1, dVector3 anchor2 );
+void setBall2( dxJoint *joint, dReal fps, dReal erp, 
+    int rowskip, dReal *J1, dReal *J2,
+    int pairskip, dReal *pairRhsCfm, 
+    dVector3 anchor1, dVector3 anchor2,
+    dVector3 axis, dReal erp1 );
+
+void setFixedOrientation( dxJoint *joint, dReal fps, dReal erp, 
+    int rowskip, dReal *J1, dReal *J2,
+    int pairskip, dReal *pairRhsCfm, 
+    dQuaternion qrel );
 
 
 void setAnchors( dxJoint *j, dReal x, dReal y, dReal z,
-                 dVector3 anchor1, dVector3 anchor2 );
+    dVector3 anchor1, dVector3 anchor2 );
 
 void getAnchor( dxJoint *j, dVector3 result, dVector3 anchor1 );
 void getAnchor2( dxJoint *j, dVector3 result, dVector3 anchor2 );
 
 void setAxes( dxJoint *j, dReal x, dReal y, dReal z,
-              dVector3 axis1, dVector3 axis2 );
+             dVector3 axis1, dVector3 axis2 );
 void getAxis( dxJoint *j, dVector3 result, dVector3 axis1 );
 void getAxis2( dxJoint *j, dVector3 result, dVector3 axis2 );
 
 
 dReal getHingeAngle( dxBody *body1, dxBody *body2, dVector3 axis, dQuaternion q_initial );
 dReal getHingeAngleFromRelativeQuat( dQuaternion qrel, dVector3 axis );
-
-void setFixedOrientation( dxJoint *joint, dxJoint::Info2 *info, dQuaternion qrel, int start_row );
 
 #endif
 

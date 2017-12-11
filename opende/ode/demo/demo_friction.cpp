@@ -44,7 +44,7 @@ slide.
 */
 
 
-#include <ode-dbl/ode.h>
+#include <ode/ode.h>
 #include <drawstuff/drawstuff.h>
 #include "texturepath.h"
 
@@ -88,7 +88,7 @@ static dGeomID box[N1][N2];
 // this is called by dSpaceCollide when two objects in space are
 // potentially colliding.
 
-static void nearCallback (void *data, dGeomID o1, dGeomID o2)
+static void nearCallback (void *, dGeomID o1, dGeomID o2)
 {
   int i;
 

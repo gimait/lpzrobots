@@ -18,22 +18,24 @@
  *                       32 bit indices. Use the dTriIndex type to
  *                       detect the correct index size.
  *
- *   dUSE_MALLOC_FOR_ALLOCA (experimental)-
- *                       Use malloc() instead of alloca(). Slower,
- *                       but allows for larger systems and more
- *                       graceful out-of-memory handling.
+ *   dTRIMESH_OPCODE_USE_NEWOLD_TRIMESH_TRIMESH_COLLIDER
+ *                       Use old implementation of trimesh-trimesh collider
+ *                       (for backward compatibility only)
  *
- *   dTRIMESH_OPCODE_USE_NEW_TRIMESH_TRIMESH_COLLIDER (experimental)-
- *                       Use an alternative trimesh-trimesh collider
- *                       which should yield better results.
+ *   dOU_ENABLED       
+ *   dATOMICS_ENABLED
+ *   dTLS_ENABLED
+ *                       Use generic features of OU library, atomic API
+ *                       and TLS API respectively.
+ *                       Generic features and atomic API are always enabled, 
+ *                       unless threading interface support is disabled.
+ *                       Using TLS for global variables allows calling ODE 
+ *                       collision detection functions from multiple threads.
  *
- *   dOU_ENABLED (experimental)
- *   dATOMICS_ENABLED (experimental)
- *   dTLS_ENABLED (experimental)
- *                       Use generic features of OU library, atomic
- *                       API and TLS API respectively. Using TLS for
- *                       global variables allows calling ODE from 
- *                       multiple threads.
+ *   dBUILTIN_THREADING_IMPL_ENABLED
+ *                       Include built-in multithreaded threading 
+ *                       implementation (still must be created and assigned
+ *                       to be used).
  *
  ******************************************************************/
 
@@ -43,11 +45,12 @@
 
 #define dTRIMESH_OPCODE_USE_OLD_TRIMESH_TRIMESH_COLLIDER 0
 
-/* #define dUSE_MALLOC_FOR_ALLOCA */
-
 /* #define dOU_ENABLED 1 */
 /* #define dATOMICS_ENABLED 1 */
 /* #define dTLS_ENABLED 1 */
+
+/* #define dTHREADING_INTF_DISABLED 1 */
+/* #define dBUILTIN_THREADING_IMPL_ENABLED 1 */
 
 
 /******************************************************************
@@ -95,27 +98,12 @@
   #include <alloca.h>
 #endif
 
-// Use the error-checking memory allocation system.  Because this system uses heap
-//  (malloc) instead of stack (alloca), it is slower.  However, it allows you to
-//  simulate larger scenes, as well as handle out-of-memory errors in a somewhat
-//  graceful manner
-
-#ifdef dUSE_MALLOC_FOR_ALLOCA
-enum {
-  d_MEMORY_OK = 0,              /* no memory errors */
-  d_MEMORY_OUT_OF_MEMORY        /* malloc failed due to out of memory error */
-};
-#endif
 
 #ifdef dSINGLE
        #define dEpsilon  FLT_EPSILON
 #else
        #define dEpsilon  DBL_EPSILON
 #endif
-
-/* An integer type that can be safely cast to a pointer. This definition
- * should be safe even on 64-bit systems */
-typedef size_t intP;
 
 /* The efficient alignment. most platforms align data structures to some
  * number of bytes, but this is not always the most efficient alignment.
@@ -128,10 +116,13 @@ typedef size_t intP;
 
 /* Basic OU functionality is required if either atomic API or TLS support
  * is enabled. */
-#if dATOMICS_ENABLED || dTLS_ENABLED
+#if (dATOMICS_ENABLED || dTLS_ENABLED) && !dOU_ENABLED
 #undef dOU_ENABLED
 #define dOU_ENABLED 1
 #endif
+
+
+#include "typedefs.h"
 
 
 #endif

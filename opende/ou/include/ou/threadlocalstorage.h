@@ -28,6 +28,11 @@
 #define _OU_THREADLOCALSTORAGE_H_INCLUDED
 
 
+#include <ou/features.h>
+
+
+#if _OU_FEATURE_SET >= _OU_FEATURE_SET_TLS
+
 #include <ou/typewrapper.h>
 #include <ou/macros.h>
 #include <ou/assert.h>
@@ -36,7 +41,7 @@
 
 #if _OU_TARGET_OS == _OU_TARGET_OS_WINDOWS
 
-#include <Windows.h>
+#include <windows.h>
 
 
 #else // #if _OU_TARGET_OS != _OU_TARGET_OS_WINDOWS
@@ -164,7 +169,7 @@ public: // Safe methods
 	 *	called anyway, there is no sense in creating additional overload without
 	 *	destructor parameter which would preserve current destructor procedure.
 	 */
-	static _OU_ALWAYSINLINE_PRE bool _OU_ALWAYSINLINE_IN _OU_CONVENTION_API 
+	static _OU_ALWAYSINLINE bool _OU_CONVENTION_API 
 	/*bool */SetStorageValue(const HTLSKEY &hskStorageKey, tlsindextype iValueIndex, tlsvaluetype vValueData, CTLSValueDestructor fnValueDestructor=NULL)
 	{
 		bool bResult;
@@ -186,7 +191,7 @@ public: // Safe methods
 		return bResult;
 	}
 
-	static _OU_ALWAYSINLINE_PRE tlsvaluetype _OU_ALWAYSINLINE_IN _OU_CONVENTION_API 
+	static _OU_ALWAYSINLINE tlsvaluetype _OU_CONVENTION_API 
 	/*tlsvaluetype */GetStorageValue(const HTLSKEY &hskStorageKey, tlsindextype iValueIndex)
 	{
 		tlsvaluetype vValueData = 0;
@@ -202,14 +207,14 @@ public: // Safe methods
 	}
 
 public: // Unsafe methods
-	static _OU_ALWAYSINLINE_PRE void _OU_ALWAYSINLINE_IN _OU_CONVENTION_API 
+	static _OU_ALWAYSINLINE void _OU_CONVENTION_API 
 	/*void */UnsafeSetStorageValue(const HTLSKEY &hskStorageKey, tlsindextype iValueIndex, tlsvaluetype vValueData)
 	{
 		CTLSStorageBlock *psbStorageBlock = GetKeyStorageBlock(hskStorageKey);
 		psbStorageBlock->SetValueData(iValueIndex, vValueData);
 	}
 
-	static _OU_ALWAYSINLINE_PRE tlsvaluetype _OU_ALWAYSINLINE_IN _OU_CONVENTION_API 
+	static _OU_ALWAYSINLINE tlsvaluetype _OU_CONVENTION_API 
 	/*tlsvaluetype */UnsafeGetStorageValue(const HTLSKEY &hskStorageKey, tlsindextype iValueIndex)
 	{
 		CTLSStorageBlock *psbStorageBlock = GetKeyStorageBlock(hskStorageKey);
@@ -284,6 +289,9 @@ private:
 
 
 END_NAMESPACE_OU();
+
+
+#endif // #if _OU_FEATURE_SET >= _OU_FEATURE_SET_TLS
 
 
 #endif // #ifndef _OU_THREADLOCALSTORAGE_H_INCLUDED

@@ -29,17 +29,19 @@ transform is the identity.
 
 */
 
-#include <ode-dbl/ode.h>
-#include <ode-dbl/odemath.h>
-#include <ode-dbl/rotation.h>
-#include <ode-dbl/matrix.h>
+#include <ode/ode.h>
+#include <ode/rotation.h>
+#include "config.h"
+#include "matrix.h"
+#include "odemath.h"
 #include "joint.h"
 #include "joint_internal.h"
+#include "util.h"
 
 extern void addObjectToList( dObject *obj, dObject **first );
 
 dxJoint::dxJoint( dxWorld *w ) :
-        dObject( w )
+    dObject( w )
 {
     //printf("constructing %p\n", this);
     dIASSERT( w );
@@ -62,12 +64,37 @@ dxJoint::~dxJoint()
 { }
 
 
+/*virtual */
+void dxJoint::setRelativeValues()
+{
+    // Do nothing
+}
+
 bool dxJoint::isEnabled() const
 {
     return ( (flags & dJOINT_DISABLED) == 0 &&
-             (node[0].body->invMass > 0 ||
-             (node[1].body && node[1].body->invMass > 0)) );
+        (node[0].body->invMass > 0 ||
+        (node[1].body && node[1].body->invMass > 0)) );
 }
+
+
+size_t dxJointGroup::exportJoints(dxJoint **jlist)
+{
+    size_t i=0;
+    dxJoint *j = (dxJoint*) m_stack.rewind();
+    while (j != NULL) {
+        jlist[i++] = j;
+        j = (dxJoint*) (m_stack.next (j->size()));
+    }
+    return i;
+}
+
+void dxJointGroup::freeAll()
+{
+    m_num = 0;
+    m_stack.freeAll();
+}
+
 
 //****************************************************************************
 // externs
@@ -81,45 +108,50 @@ bool dxJoint::isEnabled() const
 // set three "ball-and-socket" rows in the constraint equation, and the
 // corresponding right hand side.
 
-void setBall( dxJoint *joint, dxJoint::Info2 *info,
-              dVector3 anchor1, dVector3 anchor2 )
+void setBall( dxJoint *joint, dReal fps, dReal erp, 
+    int rowskip, dReal *J1, dReal *J2,
+    int pairskip, dReal *pairRhsCfm, 
+    dVector3 anchor1, dVector3 anchor2 )
 {
     // anchor points in global coordinates with respect to body PORs.
     dVector3 a1, a2;
 
-    int s = info->rowskip;
+    // set Jacobian
+    J1[dxJoint::GI2_JLX] = 1;
+    J1[rowskip + dxJoint::GI2_JLY] = 1;
+    J1[2 * rowskip + dxJoint::GI2_JLZ] = 1;
+    dMultiply0_331( a1, joint->node[0].body->posr.R, anchor1 );
+    dSetCrossMatrixMinus( J1 + dxJoint::GI2__JA_MIN, a1, rowskip );
 
-    // set jacobian
-    info->J1l[0] = 1;
-    info->J1l[s+1] = 1;
-    info->J1l[2*s+2] = 1;
-    dMULTIPLY0_331( a1, joint->node[0].body->posr.R, anchor1 );
-    dCROSSMAT( info->J1a, a1, s, -, + );
-    if ( joint->node[1].body )
+    dxBody *b1 = joint->node[1].body;
+    if ( b1 )
     {
-        info->J2l[0] = -1;
-        info->J2l[s+1] = -1;
-        info->J2l[2*s+2] = -1;
-        dMULTIPLY0_331( a2, joint->node[1].body->posr.R, anchor2 );
-        dCROSSMAT( info->J2a, a2, s, + , - );
+        J2[dxJoint::GI2_JLX] = -1;
+        J2[rowskip + dxJoint::GI2_JLY] = -1;
+        J2[2 * rowskip + dxJoint::GI2_JLZ] = -1;
+        dMultiply0_331( a2, b1->posr.R, anchor2 );
+        dSetCrossMatrixPlus( J2 + dxJoint::GI2__JA_MIN, a2, rowskip );
     }
 
     // set right hand side
-    dReal k = info->fps * info->erp;
-    if ( joint->node[1].body )
+    dReal k = fps * erp;
+    dxBody *b0 = joint->node[0].body;
+    if ( b1 )
     {
-        for ( int j = 0; j < 3; j++ )
+        dReal *currRhsCfm = pairRhsCfm;
+        for ( int j = dSA__MIN; j != dSA__MAX; j++ )
         {
-            info->c[j] = k * ( a2[j] + joint->node[1].body->posr.pos[j] -
-                               a1[j] - joint->node[0].body->posr.pos[j] );
+            currRhsCfm[dxJoint::GI2_RHS] = k * ( a2[j] + b1->posr.pos[j] - a1[j] - b0->posr.pos[j] );
+            currRhsCfm += pairskip;
         }
     }
     else
     {
-        for ( int j = 0; j < 3; j++ )
+        dReal *currRhsCfm = pairRhsCfm;
+        for ( int j = dSA__MIN; j != dSA__MAX; j++ )
         {
-            info->c[j] = k * ( anchor2[j] - a1[j] -
-                               joint->node[0].body->posr.pos[j] );
+            currRhsCfm[dxJoint::GI2_RHS] = k * ( anchor2[j] - a1[j] - b0->posr.pos[j] );
+            currRhsCfm += pairskip;
         }
     }
 }
@@ -130,56 +162,62 @@ void setBall( dxJoint *joint, dxJoint::Info2 *info,
 // position row (the other two row vectors will be derived from this).
 // `erp1' is the erp value to use along the axis.
 
-void setBall2( dxJoint *joint, dxJoint::Info2 *info,
-               dVector3 anchor1, dVector3 anchor2,
-               dVector3 axis, dReal erp1 )
+void setBall2( dxJoint *joint, dReal fps, dReal erp, 
+    int rowskip, dReal *J1, dReal *J2,
+    int pairskip, dReal *pairRhsCfm, 
+    dVector3 anchor1, dVector3 anchor2,
+    dVector3 axis, dReal erp1 )
 {
     // anchor points in global coordinates with respect to body PORs.
     dVector3 a1, a2;
-
-    int i, s = info->rowskip;
 
     // get vectors normal to the axis. in setBall() axis,q1,q2 is [1 0 0],
     // [0 1 0] and [0 0 1], which makes everything much easier.
     dVector3 q1, q2;
     dPlaneSpace( axis, q1, q2 );
 
-    // set jacobian
-    for ( i = 0; i < 3; i++ ) info->J1l[i] = axis[i];
-    for ( i = 0; i < 3; i++ ) info->J1l[s+i] = q1[i];
-    for ( i = 0; i < 3; i++ ) info->J1l[2*s+i] = q2[i];
-    dMULTIPLY0_331( a1, joint->node[0].body->posr.R, anchor1 );
-    dCROSS( info->J1a, = , a1, axis );
-    dCROSS( info->J1a + s, = , a1, q1 );
-    dCROSS( info->J1a + 2*s, = , a1, q2 );
-    if ( joint->node[1].body )
-    {
-        for ( i = 0; i < 3; i++ ) info->J2l[i] = -axis[i];
-        for ( i = 0; i < 3; i++ ) info->J2l[s+i] = -q1[i];
-        for ( i = 0; i < 3; i++ ) info->J2l[2*s+i] = -q2[i];
-        dMULTIPLY0_331( a2, joint->node[1].body->posr.R, anchor2 );
-        dCROSS( info->J2a, = -, a2, axis );
-        dCROSS( info->J2a + s, = -, a2, q1 );
-        dCROSS( info->J2a + 2*s, = -, a2, q2 );
-    }
+    // set Jacobian
+    dCopyVector3(J1 + dxJoint::GI2__JL_MIN, axis);
+    dCopyVector3(J1 + rowskip + dxJoint::GI2__JL_MIN, q1);
+    dCopyVector3(J1 + 2 * rowskip + dxJoint::GI2__JL_MIN, q2);
+    dMultiply0_331( a1, joint->node[0].body->posr.R, anchor1 );
+    dCalcVectorCross3( J1 + dxJoint::GI2__JA_MIN, a1, axis );
+    dCalcVectorCross3( J1 + rowskip + dxJoint::GI2__JA_MIN, a1, q1 );
+    dCalcVectorCross3( J1 + 2 * rowskip + dxJoint::GI2__JA_MIN, a1, q2 );
+
+    dxBody *b0 = joint->node[0].body;
+    dAddVectors3(a1, a1, b0->posr.pos);
 
     // set right hand side - measure error along (axis,q1,q2)
-    dReal k1 = info->fps * erp1;
-    dReal k = info->fps * info->erp;
+    dReal k1 = fps * erp1;
+    dReal k = fps * erp;
 
-    for ( i = 0; i < 3; i++ ) a1[i] += joint->node[0].body->posr.pos[i];
-    if ( joint->node[1].body )
+    dxBody *b1 = joint->node[1].body;
+    if ( b1 )
     {
-        for ( i = 0; i < 3; i++ ) a2[i] += joint->node[1].body->posr.pos[i];
-        info->c[0] = k1 * ( dDOT( axis, a2 ) - dDOT( axis, a1 ) );
-        info->c[1] = k * ( dDOT( q1, a2 ) - dDOT( q1, a1 ) );
-        info->c[2] = k * ( dDOT( q2, a2 ) - dDOT( q2, a1 ) );
+        dCopyNegatedVector3(J2 + dxJoint::GI2__JL_MIN, axis);
+        dCopyNegatedVector3(J2 + rowskip + dxJoint::GI2__JL_MIN, q1);
+        dCopyNegatedVector3(J2 + 2 * rowskip + dxJoint::GI2__JL_MIN, q2);
+        dMultiply0_331( a2, b1->posr.R, anchor2 );
+        dCalcVectorCross3( J2 + dxJoint::GI2__JA_MIN, axis, a2 ); //== dCalcVectorCross3( J2 + dxJoint::GI2__J2A_MIN, a2, axis ); dNegateVector3( J2 + dxJoint::GI2__J2A_MIN );
+        dCalcVectorCross3( J2 + rowskip + dxJoint::GI2__JA_MIN, q1, a2 ); //== dCalcVectorCross3( J2 + rowskip + dxJoint::GI2__J2A_MIN, a2, q1 ); dNegateVector3( J2 + rowskip + dxJoint::GI2__J2A_MIN );
+        dCalcVectorCross3( J2 + 2 * rowskip + dxJoint::GI2__JA_MIN, q2, a2 ); //== dCalcVectorCross3( J2 + 2 * rowskip + dxJoint::GI2__J2A_MIN, a2, q2 ); dNegateVector3( J2 + 2 * rowskip + dxJoint::GI2__J2A_MIN );
+
+        dAddVectors3(a2, a2, b1->posr.pos);
+
+        dVector3 a2_minus_a1;
+        dSubtractVectors3(a2_minus_a1, a2, a1);
+        pairRhsCfm[dxJoint::GI2_RHS] = k1 * dCalcVectorDot3( axis, a2_minus_a1 );
+        pairRhsCfm[pairskip + dxJoint::GI2_RHS] = k * dCalcVectorDot3( q1, a2_minus_a1 );
+        pairRhsCfm[2 * pairskip + dxJoint::GI2_RHS] = k * dCalcVectorDot3( q2, a2_minus_a1 );
     }
     else
     {
-        info->c[0] = k1 * ( dDOT( axis, anchor2 ) - dDOT( axis, a1 ) );
-        info->c[1] = k * ( dDOT( q1, anchor2 ) - dDOT( q1, a1 ) );
-        info->c[2] = k * ( dDOT( q2, anchor2 ) - dDOT( q2, a1 ) );
+        dVector3 anchor2_minus_a1;
+        dSubtractVectors3(anchor2_minus_a1, anchor2, a1);
+        pairRhsCfm[dxJoint::GI2_RHS] = k1 * dCalcVectorDot3( axis, anchor2_minus_a1 );
+        pairRhsCfm[pairskip + dxJoint::GI2_RHS] = k * dCalcVectorDot3( q1, anchor2_minus_a1 );
+        pairRhsCfm[2 * pairskip + dxJoint::GI2_RHS] = k * dCalcVectorDot3( q2, anchor2_minus_a1 );
     }
 }
 
@@ -187,20 +225,22 @@ void setBall2( dxJoint *joint, dxJoint::Info2 *info,
 // set three orientation rows in the constraint equation, and the
 // corresponding right hand side.
 
-void setFixedOrientation( dxJoint *joint, dxJoint::Info2 *info, dQuaternion qrel, int start_row )
+void setFixedOrientation( dxJoint *joint, dReal fps, dReal erp, 
+    int rowskip, dReal *J1, dReal *J2,
+    int pairskip, dReal *pairRhsCfm, 
+    dQuaternion qrel )
 {
-    int s = info->rowskip;
-    int start_index = start_row * s;
-
     // 3 rows to make body rotations equal
-    info->J1a[start_index] = 1;
-    info->J1a[start_index + s + 1] = 1;
-    info->J1a[start_index + s*2+2] = 1;
-    if ( joint->node[1].body )
+    J1[dxJoint::GI2_JAX] = 1;
+    J1[rowskip + dxJoint::GI2_JAY] = 1;
+    J1[2 * rowskip + dxJoint::GI2_JAZ] = 1;
+
+    dxBody *b1 = joint->node[1].body;
+    if ( b1 )
     {
-        info->J2a[start_index] = -1;
-        info->J2a[start_index + s+1] = -1;
-        info->J2a[start_index + s*2+2] = -1;
+        J2[dxJoint::GI2_JAX] = -1;
+        J2[rowskip + dxJoint::GI2_JAY] = -1;
+        J2[2 * rowskip + dxJoint::GI2_JAZ] = -1;
     }
 
     // compute the right hand side. the first three elements will result in
@@ -219,15 +259,16 @@ void setFixedOrientation( dxJoint *joint, dxJoint::Info2 *info, dQuaternion qrel
 
     // get qerr = relative rotation (rotation error) between two bodies
     dQuaternion qerr, e;
-    if ( joint->node[1].body )
+    dxBody *b0 = joint->node[0].body;
+    if ( b1 )
     {
         dQuaternion qq;
-        dQMultiply1( qq, joint->node[0].body->q, joint->node[1].body->q );
+        dQMultiply1( qq, b0->q, b1->q );
         dQMultiply2( qerr, qq, qrel );
     }
     else
     {
-        dQMultiply3( qerr, joint->node[0].body->q, qrel );
+        dQMultiply3( qerr, b0->q, qrel );
     }
     if ( qerr[0] < 0 )
     {
@@ -235,34 +276,37 @@ void setFixedOrientation( dxJoint *joint, dxJoint::Info2 *info, dQuaternion qrel
         qerr[2] = -qerr[2];
         qerr[3] = -qerr[3];
     }
-    dMULTIPLY0_331( e, joint->node[0].body->posr.R, qerr + 1 );  // @@@ bad SIMD padding!
-    dReal k = info->fps * info->erp;
-    info->c[start_row] = 2 * k * e[0];
-    info->c[start_row+1] = 2 * k * e[1];
-    info->c[start_row+2] = 2 * k * e[2];
+    dMultiply0_331( e, b0->posr.R, qerr + 1 );  // @@@ bad SIMD padding!
+    dReal k_mul_2 = fps * erp * REAL(2.0);
+    pairRhsCfm[dxJoint::GI2_RHS] = k_mul_2 * e[dSA_X];
+    pairRhsCfm[pairskip + dxJoint::GI2_RHS] = k_mul_2 * e[dSA_Y];
+    pairRhsCfm[2 * pairskip + dxJoint::GI2_RHS] = k_mul_2 * e[dSA_Z];
 }
 
 
 // compute anchor points relative to bodies
 
 void setAnchors( dxJoint *j, dReal x, dReal y, dReal z,
-                 dVector3 anchor1, dVector3 anchor2 )
+                dVector3 anchor1, dVector3 anchor2 )
 {
-    if ( j->node[0].body )
+    dxBody *b0 = j->node[0].body;
+    if ( b0 )
     {
         dReal q[4];
-        q[0] = x - j->node[0].body->posr.pos[0];
-        q[1] = y - j->node[0].body->posr.pos[1];
-        q[2] = z - j->node[0].body->posr.pos[2];
+        q[0] = x - b0->posr.pos[0];
+        q[1] = y - b0->posr.pos[1];
+        q[2] = z - b0->posr.pos[2];
         q[3] = 0;
-        dMULTIPLY1_331( anchor1, j->node[0].body->posr.R, q );
-        if ( j->node[1].body )
+        dMultiply1_331( anchor1, b0->posr.R, q );
+
+        dxBody *b1 = j->node[1].body;
+        if ( b1 )
         {
-            q[0] = x - j->node[1].body->posr.pos[0];
-            q[1] = y - j->node[1].body->posr.pos[1];
-            q[2] = z - j->node[1].body->posr.pos[2];
+            q[0] = x - b1->posr.pos[0];
+            q[1] = y - b1->posr.pos[1];
+            q[2] = z - b1->posr.pos[2];
             q[3] = 0;
-            dMULTIPLY1_331( anchor2, j->node[1].body->posr.R, q );
+            dMultiply1_331( anchor2, b1->posr.R, q );
         }
         else
         {
@@ -279,9 +323,10 @@ void setAnchors( dxJoint *j, dReal x, dReal y, dReal z,
 // compute axes relative to bodies. either axis1 or axis2 can be 0.
 
 void setAxes( dxJoint *j, dReal x, dReal y, dReal z,
-              dVector3 axis1, dVector3 axis2 )
+             dVector3 axis1, dVector3 axis2 )
 {
-    if ( j->node[0].body )
+    dxBody *b0 = j->node[0].body;
+    if ( b0 )
     {
         dReal q[4];
         q[0] = x;
@@ -289,16 +334,19 @@ void setAxes( dxJoint *j, dReal x, dReal y, dReal z,
         q[2] = z;
         q[3] = 0;
         dNormalize3( q );
+
         if ( axis1 )
         {
-            dMULTIPLY1_331( axis1, j->node[0].body->posr.R, q );
+            dMultiply1_331( axis1, b0->posr.R, q );
             axis1[3] = 0;
         }
+
         if ( axis2 )
         {
-            if ( j->node[1].body )
+            dxBody *b1 = j->node[1].body;
+            if ( b1 )
             {
-                dMULTIPLY1_331( axis2, j->node[1].body->posr.R, q );
+                dMultiply1_331( axis2, b1->posr.R, q );
             }
             else
             {
@@ -314,24 +362,26 @@ void setAxes( dxJoint *j, dReal x, dReal y, dReal z,
 
 void getAnchor( dxJoint *j, dVector3 result, dVector3 anchor1 )
 {
-    if ( j->node[0].body )
+    dxBody *b0 = j->node[0].body;
+    if ( b0 )
     {
-        dMULTIPLY0_331( result, j->node[0].body->posr.R, anchor1 );
-        result[0] += j->node[0].body->posr.pos[0];
-        result[1] += j->node[0].body->posr.pos[1];
-        result[2] += j->node[0].body->posr.pos[2];
+        dMultiply0_331( result, b0->posr.R, anchor1 );
+        result[0] += b0->posr.pos[0];
+        result[1] += b0->posr.pos[1];
+        result[2] += b0->posr.pos[2];
     }
 }
 
 
 void getAnchor2( dxJoint *j, dVector3 result, dVector3 anchor2 )
 {
-    if ( j->node[1].body )
+    dxBody *b1 = j->node[1].body;
+    if ( b1 )
     {
-        dMULTIPLY0_331( result, j->node[1].body->posr.R, anchor2 );
-        result[0] += j->node[1].body->posr.pos[0];
-        result[1] += j->node[1].body->posr.pos[1];
-        result[2] += j->node[1].body->posr.pos[2];
+        dMultiply0_331( result, b1->posr.R, anchor2 );
+        result[0] += b1->posr.pos[0];
+        result[1] += b1->posr.pos[1];
+        result[2] += b1->posr.pos[2];
     }
     else
     {
@@ -344,18 +394,20 @@ void getAnchor2( dxJoint *j, dVector3 result, dVector3 anchor2 )
 
 void getAxis( dxJoint *j, dVector3 result, dVector3 axis1 )
 {
-    if ( j->node[0].body )
+    dxBody *b0 = j->node[0].body;
+    if ( b0 )
     {
-        dMULTIPLY0_331( result, j->node[0].body->posr.R, axis1 );
+        dMultiply0_331( result, b0->posr.R, axis1 );
     }
 }
 
 
 void getAxis2( dxJoint *j, dVector3 result, dVector3 axis2 )
 {
-    if ( j->node[1].body )
+    dxBody *b1 = j->node[1].body;
+    if ( b1 )
     {
-        dMULTIPLY0_331( result, j->node[1].body->posr.R, axis2 );
+        dMultiply0_331( result, b1->posr.R, axis2 );
     }
     else
     {
@@ -393,9 +445,9 @@ dReal getHingeAngleFromRelativeQuat( dQuaternion qrel, dVector3 axis )
     // sint2 = |sin(theta/2)|
     dReal cost2 = qrel[0];
     dReal sint2 = dSqrt( qrel[1] * qrel[1] + qrel[2] * qrel[2] + qrel[3] * qrel[3] );
-    dReal theta = ( dDOT( qrel + 1, axis ) >= 0 ) ? // @@@ padding assumptions
-                  ( 2 * dAtan2( sint2, cost2 ) ) :  // if u points in direction of axis
-                  ( 2 * dAtan2( sint2, -cost2 ) );  // if u points in opposite direction
+    dReal theta = ( dCalcVectorDot3( qrel + 1, axis ) >= 0 ) ? // @@@ padding assumptions
+        ( 2 * dAtan2( sint2, cost2 ) ) :  // if u points in direction of axis
+        ( 2 * dAtan2( sint2, -cost2 ) );  // if u points in opposite direction
 
     // the angle we get will be between 0..2*pi, but we want to return angles
     // between -pi..pi
@@ -418,7 +470,7 @@ dReal getHingeAngleFromRelativeQuat( dQuaternion qrel, dVector3 axis )
 // other than the given hinge axis.
 
 dReal getHingeAngle( dxBody *body1, dxBody *body2, dVector3 axis,
-                     dQuaternion q_initial )
+                    dQuaternion q_initial )
 {
     // get qrel = relative rotation between the two bodies
     dQuaternion qrel;
@@ -491,7 +543,7 @@ void dxJointLimitMotor::set( int num, dReal value )
 }
 
 
-dReal dxJointLimitMotor::get( int num )
+dReal dxJointLimitMotor::get( int num ) const
 {
     switch ( num )
     {
@@ -519,49 +571,45 @@ dReal dxJointLimitMotor::get( int num )
 }
 
 
-int dxJointLimitMotor::testRotationalLimit( dReal angle )
+bool dxJointLimitMotor::testRotationalLimit( dReal angle )
 {
     if ( angle <= lostop )
     {
         limit = 1;
         limit_err = angle - lostop;
-        return 1;
+        return true;
     }
     else if ( angle >= histop )
     {
         limit = 2;
         limit_err = angle - histop;
-        return 1;
+        return true;
     }
     else
     {
         limit = 0;
-        return 0;
+        return false;
     }
 }
 
 
-int dxJointLimitMotor::addLimot( dxJoint *joint,
-                                 dxJoint::Info2 *info, int row,
-                                 const dVector3 ax1, int rotational )
+bool dxJointLimitMotor::addLimot( dxJoint *joint,
+    dReal fps, dReal *J1, dReal *J2, dReal *pairRhsCfm, dReal *pairLoHi,
+    const dVector3 ax1, int rotational )
 {
-    int srow = row * info->rowskip;
-
     // if the joint is powered, or has joint limits, add in the extra row
     int powered = fmax > 0;
     if ( powered || limit )
     {
-        dReal *J1 = rotational ? info->J1a : info->J1l;
-        dReal *J2 = rotational ? info->J2a : info->J2l;
+        dReal *J1Used = rotational ? J1 + GI2__JA_MIN : J1 + GI2__JL_MIN;
+        dReal *J2Used = rotational ? J2 + GI2__JA_MIN : J2 + GI2__JL_MIN;
 
-        J1[srow+0] = ax1[0];
-        J1[srow+1] = ax1[1];
-        J1[srow+2] = ax1[2];
-        if ( joint->node[1].body )
+        dCopyVector3(J1Used, ax1);
+
+        dxBody *b1 = joint->node[1].body;
+        if ( b1 )
         {
-            J2[srow+0] = -ax1[0];
-            J2[srow+1] = -ax1[1];
-            J2[srow+2] = -ax1[2];
+            dCopyNegatedVector3(J2Used, ax1);
         }
 
         // linear limot torque decoupling step:
@@ -578,19 +626,16 @@ int dxJointLimitMotor::addLimot( dxJoint *joint,
         // only need to do this if the constraint connects two bodies.
 
         dVector3 ltd = {0,0,0}; // Linear Torque Decoupling vector (a torque)
-        if ( !rotational && joint->node[1].body )
+        if ( !rotational && b1 )
         {
+            dxBody *b0 = joint->node[0].body;
             dVector3 c;
-            c[0] = REAL( 0.5 ) * ( joint->node[1].body->posr.pos[0] - joint->node[0].body->posr.pos[0] );
-            c[1] = REAL( 0.5 ) * ( joint->node[1].body->posr.pos[1] - joint->node[0].body->posr.pos[1] );
-            c[2] = REAL( 0.5 ) * ( joint->node[1].body->posr.pos[2] - joint->node[0].body->posr.pos[2] );
-            dCROSS( ltd, = , c, ax1 );
-            info->J1a[srow+0] = ltd[0];
-            info->J1a[srow+1] = ltd[1];
-            info->J1a[srow+2] = ltd[2];
-            info->J2a[srow+0] = ltd[0];
-            info->J2a[srow+1] = ltd[1];
-            info->J2a[srow+2] = ltd[2];
+            c[0] = REAL( 0.5 ) * ( b1->posr.pos[0] - b0->posr.pos[0] );
+            c[1] = REAL( 0.5 ) * ( b1->posr.pos[1] - b0->posr.pos[1] );
+            c[2] = REAL( 0.5 ) * ( b1->posr.pos[2] - b0->posr.pos[2] );
+            dCalcVectorCross3( ltd, c, ax1 );
+            dCopyVector3(J1 + dxJoint::GI2__JA_MIN, ltd);
+            dCopyVector3(J2 + dxJoint::GI2__JA_MIN, ltd);
         }
 
         // if we're limited low and high simultaneously, the joint motor is
@@ -599,12 +644,12 @@ int dxJointLimitMotor::addLimot( dxJoint *joint,
 
         if ( powered )
         {
-            info->cfm[row] = normal_cfm;
+            pairRhsCfm[GI2_CFM] = normal_cfm;
             if ( ! limit )
             {
-                info->c[row] = vel;
-                info->lo[row] = -fmax;
-                info->hi[row] = fmax;
+                pairRhsCfm[GI2_RHS] = vel;
+                pairLoHi[GI2_LO] = -fmax;
+                pairLoHi[GI2_HI] = fmax;
             }
             else
             {
@@ -623,55 +668,69 @@ int dxJointLimitMotor::addLimot( dxJoint *joint,
                 // if we're powering away from the limit, apply the fudge factor
                 if (( limit == 1 && vel > 0 ) || ( limit == 2 && vel < 0 ) ) fm *= fudge_factor;
 
+                
+                dReal fm_ax1_0 = fm*ax1[0], fm_ax1_1 = fm*ax1[1], fm_ax1_2 = fm*ax1[2];
+                
+                dxBody *b0 = joint->node[0].body;
+                dxWorldProcessContext *world_process_context = b0->world->UnsafeGetWorldProcessingContext(); 
+
+                world_process_context->LockForAddLimotSerialization();
+
                 if ( rotational )
                 {
-                    dBodyAddTorque( joint->node[0].body, -fm*ax1[0], -fm*ax1[1],
-                                    -fm*ax1[2] );
-                    if ( joint->node[1].body )
-                        dBodyAddTorque( joint->node[1].body, fm*ax1[0], fm*ax1[1], fm*ax1[2] );
+                    dxBody *b1 = joint->node[1].body;
+                    if ( b1 != NULL ) 
+                    {
+                        dBodyAddTorque( b1, fm_ax1_0, fm_ax1_1, fm_ax1_2 );
+                    }
+
+                    dBodyAddTorque( b0, -fm_ax1_0, -fm_ax1_1, -fm_ax1_2 );
                 }
                 else
                 {
-                    dBodyAddForce( joint->node[0].body, -fm*ax1[0], -fm*ax1[1], -fm*ax1[2] );
-                    if ( joint->node[1].body )
+                    dxBody *b1 = joint->node[1].body;
+                    if ( b1 != NULL )
                     {
-                        dBodyAddForce( joint->node[1].body, fm*ax1[0], fm*ax1[1], fm*ax1[2] );
-
                         // linear limot torque decoupling step: refer to above discussion
-                        dBodyAddTorque( joint->node[0].body, -fm*ltd[0], -fm*ltd[1],
-                                        -fm*ltd[2] );
-                        dBodyAddTorque( joint->node[1].body, -fm*ltd[0], -fm*ltd[1],
-                                        -fm*ltd[2] );
+                        dReal neg_fm_ltd_0 = -fm*ltd[0], neg_fm_ltd_1 = -fm*ltd[1], neg_fm_ltd_2 = -fm*ltd[2];
+                        dBodyAddTorque( b0, neg_fm_ltd_0, neg_fm_ltd_1, neg_fm_ltd_2 );
+                        dBodyAddTorque( b1, neg_fm_ltd_0, neg_fm_ltd_1, neg_fm_ltd_2 );
+
+                        dBodyAddForce( b1, fm_ax1_0, fm_ax1_1, fm_ax1_2 );
                     }
+
+                    dBodyAddForce( b0, -fm_ax1_0, -fm_ax1_1, -fm_ax1_2 );
                 }
+
+                world_process_context->UnlockForAddLimotSerialization();
             }
         }
 
         if ( limit )
         {
-            dReal k = info->fps * stop_erp;
-            info->c[row] = -k * limit_err;
-            info->cfm[row] = stop_cfm;
+            dReal k = fps * stop_erp;
+            pairRhsCfm[GI2_RHS] = -k * limit_err;
+            pairRhsCfm[GI2_CFM] = stop_cfm;
 
             if ( lostop == histop )
             {
                 // limited low and high simultaneously
-                info->lo[row] = -dInfinity;
-                info->hi[row] = dInfinity;
+                pairLoHi[GI2_LO] = -dInfinity;
+                pairLoHi[GI2_HI] = dInfinity;
             }
             else
             {
                 if ( limit == 1 )
                 {
                     // low limit
-                    info->lo[row] = 0;
-                    info->hi[row] = dInfinity;
+                    pairLoHi[GI2_LO] = 0;
+                    pairLoHi[GI2_HI] = dInfinity;
                 }
                 else
                 {
                     // high limit
-                    info->lo[row] = -dInfinity;
-                    info->hi[row] = 0;
+                    pairLoHi[GI2_LO] = -dInfinity;
+                    pairLoHi[GI2_HI] = 0;
                 }
 
                 // deal with bounce
@@ -681,15 +740,15 @@ int dxJointLimitMotor::addLimot( dxJoint *joint,
                     dReal vel;
                     if ( rotational )
                     {
-                        vel = dDOT( joint->node[0].body->avel, ax1 );
+                        vel = dCalcVectorDot3( joint->node[0].body->avel, ax1 );
                         if ( joint->node[1].body )
-                            vel -= dDOT( joint->node[1].body->avel, ax1 );
+                            vel -= dCalcVectorDot3( joint->node[1].body->avel, ax1 );
                     }
                     else
                     {
-                        vel = dDOT( joint->node[0].body->lvel, ax1 );
+                        vel = dCalcVectorDot3( joint->node[0].body->lvel, ax1 );
                         if ( joint->node[1].body )
-                            vel -= dDOT( joint->node[1].body->lvel, ax1 );
+                            vel -= dCalcVectorDot3( joint->node[1].body->lvel, ax1 );
                     }
 
                     // only apply bounce if the velocity is incoming, and if the
@@ -700,7 +759,7 @@ int dxJointLimitMotor::addLimot( dxJoint *joint,
                         if ( vel < 0 )
                         {
                             dReal newc = -bounce * vel;
-                            if ( newc > info->c[row] ) info->c[row] = newc;
+                            if ( newc > pairRhsCfm[GI2_RHS] ) pairRhsCfm[GI2_RHS] = newc;
                         }
                     }
                     else
@@ -709,17 +768,161 @@ int dxJointLimitMotor::addLimot( dxJoint *joint,
                         if ( vel > 0 )
                         {
                             dReal newc = -bounce * vel;
-                            if ( newc < info->c[row] ) info->c[row] = newc;
+                            if ( newc < pairRhsCfm[GI2_RHS] ) pairRhsCfm[GI2_RHS] = newc;
                         }
                     }
                 }
             }
         }
-        return 1;
+        return true;
     }
-    else return 0;
+    return false;
 }
 
+/**
+    This function generalizes the "linear limot torque decoupling"
+    in addLimot to use anchor points provided by the caller.
+
+    This makes it so that the appropriate torques are applied to
+    a body when it's being linearly motored or limited using anchor points
+    that aren't at the center of mass.
+
+    pt1 and pt2 are centered in body coordinates but use global directions.
+    I.e., they are conveniently found within joint code with:
+      getAxis(joint,pt1,anchor1);
+      getAxis2(joint,pt2,anchor2);
+*/
+bool dxJointLimitMotor::addTwoPointLimot( dxJoint *joint, dReal fps,
+    dReal *J1, dReal *J2, dReal *pairRhsCfm, dReal *pairLoHi,
+    const dVector3 ax1, const dVector3 pt1, const dVector3 pt2 )
+{
+    // if the joint is powered, or has joint limits, add in the extra row
+    int powered = fmax > 0;
+    if ( powered || limit )
+    {
+        // Set the linear portion
+        dCopyVector3(J1 + GI2__JL_MIN, ax1);
+        // Set the angular portion (to move the linear constraint 
+        // away from the center of mass).  
+        dCalcVectorCross3(J1 + GI2__JA_MIN, pt1, ax1);
+        // Set the constraints for the second body
+        if ( joint->node[1].body ) {
+            dCopyNegatedVector3(J2 + GI2__JL_MIN, ax1);
+            dCalcVectorCross3(J2 + GI2__JA_MIN, pt2, J2 + GI2__JL_MIN);
+        }
+
+        // if we're limited low and high simultaneously, the joint motor is
+        // ineffective
+        if ( limit && ( lostop == histop ) ) powered = 0;
+
+        if ( powered )
+        {
+            pairRhsCfm[GI2_CFM] = normal_cfm;
+            if ( ! limit )
+            {
+                pairRhsCfm[GI2_RHS] = vel;
+                pairLoHi[GI2_LO] = -fmax;
+                pairLoHi[GI2_HI] = fmax;
+            }
+            else
+            {
+                // the joint is at a limit, AND is being powered. if the joint is
+                // being powered into the limit then we apply the maximum motor force
+                // in that direction, because the motor is working against the
+                // immovable limit. if the joint is being powered away from the limit
+                // then we have problems because actually we need *two* lcp
+                // constraints to handle this case. so we fake it and apply some
+                // fraction of the maximum force. the fraction to use can be set as
+                // a fudge factor.
+
+                dReal fm = fmax;
+                if (( vel > 0 ) || ( vel == 0 && limit == 2 ) ) fm = -fm;
+
+                // if we're powering away from the limit, apply the fudge factor
+                if (( limit == 1 && vel > 0 ) || ( limit == 2 && vel < 0 ) ) fm *= fudge_factor;
+
+               
+                const dReal* tAx1 = J1 + GI2__JA_MIN;
+                dBodyAddForce( joint->node[0].body, -fm*ax1[dSA_X], -fm*ax1[dSA_Y], -fm*ax1[dSA_Z] );
+                dBodyAddTorque( joint->node[0].body, -fm*tAx1[dSA_X], -fm*tAx1[dSA_Y], -fm*tAx1[dSA_Z] );
+
+                if ( joint->node[1].body )
+                {
+                    const dReal* tAx2 = J2 + GI2__JA_MIN;
+                    dBodyAddForce( joint->node[1].body, fm*ax1[dSA_X], fm*ax1[dSA_Y], fm*ax1[dSA_Z] );
+                    dBodyAddTorque( joint->node[1].body, -fm*tAx2[dSA_X], -fm*tAx2[dSA_Y], -fm*tAx2[dSA_Z] );
+                }
+                
+            }
+        }
+
+        if ( limit )
+        {
+            dReal k = fps * stop_erp;
+            pairRhsCfm[GI2_RHS] = -k * limit_err;
+            pairRhsCfm[GI2_CFM] = stop_cfm;
+
+            if ( lostop == histop )
+            {
+                // limited low and high simultaneously
+                pairLoHi[GI2_LO] = -dInfinity;
+                pairLoHi[GI2_HI] = dInfinity;
+            }
+            else
+            {
+                if ( limit == 1 )
+                {
+                    // low limit
+                    pairLoHi[GI2_LO] = 0;
+                    pairLoHi[GI2_HI] = dInfinity;
+                }
+                else
+                {
+                    // high limit
+                    pairLoHi[GI2_LO] = -dInfinity;
+                    pairLoHi[GI2_HI] = 0;
+                }
+
+                // deal with bounce
+                if ( bounce > 0 )
+                {
+                    // calculate relative velocity of the two anchor points
+                    dReal vel = 
+  	                    dCalcVectorDot3( joint->node[0].body->lvel, J1 + GI2__JL_MIN ) +
+  	                    dCalcVectorDot3( joint->node[0].body->avel, J1 + GI2__JA_MIN );
+  	                if (joint->node[1].body) {
+  	                    vel +=
+  	                        dCalcVectorDot3( joint->node[1].body->lvel, J2 + GI2__JL_MIN ) +
+  	                        dCalcVectorDot3( joint->node[1].body->avel, J2 + GI2__JA_MIN );
+  	                }
+
+                    // only apply bounce if the velocity is incoming, and if the
+                    // resulting c[] exceeds what we already have.
+                    if ( limit == 1 )
+                    {
+                        // low limit
+                        if ( vel < 0 )
+                        {
+                            dReal newc = -bounce * vel;
+                            if ( newc > pairRhsCfm[GI2_RHS] ) pairRhsCfm[GI2_RHS] = newc;
+                        }
+                    }
+                    else
+                    {
+                        // high limit - all those computations are reversed
+                        if ( vel > 0 )
+                        {
+                            dReal newc = -bounce * vel;
+                            if ( newc < pairRhsCfm[GI2_RHS] ) pairRhsCfm[GI2_RHS] = newc;
+                        }
+                    }
+                }
+            }
+        }
+        return true;
+    }
+    return false;
+}
 
 
 // Local Variables:

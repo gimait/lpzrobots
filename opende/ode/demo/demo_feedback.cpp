@@ -22,12 +22,12 @@
 
 // Test for breaking joints, by Bram Stolk
 
-#include <ode-dbl/odeconfig.h>
+#include <ode/odeconfig.h>
 #include <assert.h>
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
-#include <ode-dbl/ode.h>
+#include <ode/ode.h>
 #include <drawstuff/drawstuff.h>
 #include "texturepath.h"
 
@@ -75,7 +75,7 @@ static void nearCallback (void *data, dGeomID o1, dGeomID o2)
 
   if (dGeomIsSpace(o1) || dGeomIsSpace(o2))
   {
-    fprintf(stderr,"testing space %p %p\n", o1,o2);
+      fprintf(stderr,"testing space %p %p\n", (void*)o1, (void*)o2);
     // colliding a space with something
     dSpaceCollide2(o1,o2,data,&nearCallback);
     // Note we do not want to test intersections within a space,
@@ -115,13 +115,10 @@ static void start()
 }
 
 
-
 // called when a key pressed
 
-static void command (int cmd)
-{
-}
-
+static void command (int)
+{}
 
 
 void drawGeom (dGeomID g)
@@ -154,8 +151,8 @@ static void inspectJoints(void)
     if (dJointGetBody(hinges[i], 0))
     {
       // This joint has not snapped already... inspect it.
-      dReal l0 = dLENGTH(jfeedbacks[i].f1);
-      dReal l1 = dLENGTH(jfeedbacks[i].f2);
+      dReal l0 = dCalcVectorLength3(jfeedbacks[i].f1);
+      dReal l1 = dCalcVectorLength3(jfeedbacks[i].f2);
       colours[i+0] = 0.95*colours[i+0] + 0.05 * l0/forcelimit;
       colours[i+1] = 0.95*colours[i+1] + 0.05 * l1/forcelimit;
       if (l0 > forcelimit || l1 > forcelimit)

@@ -89,7 +89,7 @@ public:
 	}
 	
 public:
-	static _OU_ALWAYSINLINE_PRE const EnumType _OU_ALWAYSINLINE_IN _OU_CONVENTION_API 
+	static _OU_ALWAYSINLINE const EnumType _OU_CONVENTION_API 
 	/*const EnumType */Decode(const ElementType &etValue)
 	{
 		const ElementType *itElementFound = FindValueSequentially(m_aetElementArray, m_aetElementArray + EnumMax, etValue);
@@ -98,7 +98,7 @@ public:
 		return etResult;
 	}
 	
-	static _OU_ALWAYSINLINE_PRE const ElementType &_OU_ALWAYSINLINE_IN _OU_CONVENTION_API 
+	static _OU_ALWAYSINLINE const ElementType &_OU_CONVENTION_API 
 	/*const ElementType &*/Encode(const EnumType &etValue)
 	{
 		OU_ASSERT(sizeof(EnumType) <= sizeof(int));
@@ -107,13 +107,13 @@ public:
 		return m_aetElementArray[etValue];
 	}
 	
-	static _OU_ALWAYSINLINE_PRE bool _OU_ALWAYSINLINE_IN _OU_CONVENTION_API 
+	static _OU_ALWAYSINLINE bool _OU_CONVENTION_API 
 	/*bool */IsValidDecode(const EnumType &etValue)
 	{
 		return etValue != EnumMax;
 	}
 	
-	static _OU_ALWAYSINLINE_PRE const ElementType *_OU_ALWAYSINLINE_IN _OU_CONVENTION_API 
+	static _OU_ALWAYSINLINE const ElementType *_OU_CONVENTION_API 
 	/*const ElementType **/GetStoragePointer()
 	{
 		return m_aetElementArray;
@@ -179,7 +179,7 @@ public:
 #endif // #if !defined(NDEBUG)
 	}
 	
-	static _OU_ALWAYSINLINE_PRE const EnumType _OU_ALWAYSINLINE_IN _OU_CONVENTION_API 
+	static _OU_ALWAYSINLINE const EnumType _OU_CONVENTION_API 
 	/*const EnumType */Decode(const ElementType &etValue)
 	{
 		const CElementLessType ltElementLess = CElementLessType();
@@ -199,7 +199,7 @@ public:
 		return etResult;
 	}
 	
-	static _OU_ALWAYSINLINE_PRE const ElementType &_OU_ALWAYSINLINE_IN _OU_CONVENTION_API 
+	static _OU_ALWAYSINLINE const ElementType &_OU_CONVENTION_API 
 	/*const ElementType &*/Encode(const EnumType &etValue)
 	{
 		OU_ASSERT(sizeof(EnumType) <= sizeof(int));
@@ -208,13 +208,13 @@ public:
 		return m_aetElementArray[etValue];
 	}
 	
-	static _OU_ALWAYSINLINE_PRE bool _OU_ALWAYSINLINE_IN _OU_CONVENTION_API 
+	static _OU_ALWAYSINLINE bool _OU_CONVENTION_API 
 	/*bool */IsValidDecode(const EnumType &etValue)
 	{
 		return etValue != EnumMax;
 	}
 	
-	static _OU_ALWAYSINLINE_PRE const ElementType *_OU_ALWAYSINLINE_IN _OU_CONVENTION_API 
+	static _OU_ALWAYSINLINE const ElementType *_OU_CONVENTION_API 
 	/*const ElementType **/GetStoragePointer()
 	{
 		return m_aetElementArray;

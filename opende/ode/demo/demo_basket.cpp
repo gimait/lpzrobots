@@ -29,7 +29,7 @@
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
-#include <ode-dbl/ode.h>
+#include <ode/ode.h>
 #include <drawstuff/drawstuff.h>
 #include "texturepath.h"
 #include "basket_geom.h" // this is our world mesh
@@ -64,7 +64,7 @@ static void nearCallback (void *data, dGeomID o1, dGeomID o2)
 
   if (dGeomIsSpace(o1) || dGeomIsSpace(o2))
   {
-    fprintf(stderr,"testing space %p %p\n", o1,o2);
+      fprintf(stderr,"testing space %p %p\n", (void*)o1, (void*)o2);
     // colliding a space with something
     dSpaceCollide2(o1,o2,data,&nearCallback);
     // Note we do not want to test intersections within a space,
@@ -115,11 +115,7 @@ static void start()
 
 static void reset_ball(void)
 {
-  float sx=0.0f, sy=3.40f, sz=7.05;
-
-#if defined(_MSC_VER) && defined(dDOUBLE)
-  sy -= 0.01; // Cheat, to make it score under win32/double
-#endif
+  float sx=0.0f, sy=3.40f, sz=7.15;
 
   dQuaternion q;
   dQSetIdentity(q);

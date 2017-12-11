@@ -29,7 +29,7 @@ The axisP is draw in red and the axisR is in green
 */
 
 
-#include <ode-dbl/ode.h>
+#include <ode/ode.h>
 #include <drawstuff/drawstuff.h>
 #include <iostream>
 #include <math.h>
@@ -78,7 +78,7 @@ static dGeomID box2[1];
 
 
 //collision detection
-static void nearCallback (void *data, dGeomID o1, dGeomID o2)
+static void nearCallback (void *, dGeomID o1, dGeomID o2)
 {
     int i,n;
 
@@ -213,9 +213,9 @@ static void command (int cmd)
         dReal l = dJointGetPRPosition(joint[0]);
         dReal v = dJointGetPRPositionRate(joint[0]);
 
-        printf("Anchor: [%6.4lf, %6.4lf, %6.4lf]\n", anchor[0], anchor[1], anchor[2]);
-        printf("Position: %7.4lf, Rate: %7.4lf\n", l, v);
-        printf("Angle: %7.4lf, Rate: %7.4lf\n", angle, w);
+        printf("Anchor: [%6.4f, %6.4f, %6.4f]\n", anchor[0], anchor[1], anchor[2]);
+        printf("Position: %7.4f, Rate: %7.4f\n", l, v);
+        printf("Angle: %7.4f, Rate: %7.4f\n", angle, w);
         break;
     }
 }

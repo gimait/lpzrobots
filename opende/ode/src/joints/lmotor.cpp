@@ -21,6 +21,8 @@
  *************************************************************************/
 
 
+#include <ode/odeconfig.h>
+#include "config.h"
 #include "lmotor.h"
 #include "joint_internal.h"
 
@@ -28,7 +30,7 @@
 //****************************************************************************
 // lmotor joint
 dxJointLMotor::dxJointLMotor( dxWorld *w ) :
-        dxJoint( w )
+    dxJoint( w )
 {
     int i;
     num = 0;
@@ -46,13 +48,13 @@ dxJointLMotor::computeGlobalAxes( dVector3 ax[3] )
     {
         if ( rel[i] == 1 )
         {
-            dMULTIPLY0_331( ax[i], node[0].body->posr.R, axis[i] );
+            dMultiply0_331( ax[i], node[0].body->posr.R, axis[i] );
         }
         else if ( rel[i] == 2 )
         {
             if ( node[1].body )   // jds: don't assert, just ignore
             {
-                dMULTIPLY0_331( ax[i], node[1].body->posr.R, axis[i] );
+                dMultiply0_331( ax[i], node[1].body->posr.R, axis[i] );
             }
         }
         else
@@ -62,6 +64,12 @@ dxJointLMotor::computeGlobalAxes( dVector3 ax[3] )
             ax[i][2] = axis[i][2];
         }
     }
+}
+
+void 
+dxJointLMotor::getSureMaxInfo( SureMaxInfo* info )
+{
+    info->max_m = num;
 }
 
 void
@@ -79,22 +87,26 @@ dxJointLMotor::getInfo1( dxJoint::Info1 *info )
 }
 
 void
-dxJointLMotor::getInfo2( dxJoint::Info2 *info )
+dxJointLMotor::getInfo2( dReal worldFPS, dReal /*worldERP*/, 
+    int rowskip, dReal *J1, dReal *J2,
+    int pairskip, dReal *pairRhsCfm, dReal *pairLoHi, 
+    int *findex )
 {
-    int row = 0;
     dVector3 ax[3];
     computeGlobalAxes( ax );
 
-    for ( int i = 0;i < num;i++ )
-    {
-        row += limot[i].addLimot( this, info, row, ax[i], 0 );
+    int currRowSkip = 0, currPairSkip = 0;
+    for ( int i = 0; i < num; ++i ) {
+        if (limot[i].addLimot( this, worldFPS, J1 + currRowSkip, J2 + currRowSkip, pairRhsCfm + currPairSkip, pairLoHi + currPairSkip, ax[i], 0 )) {
+            currRowSkip += rowskip; currPairSkip += pairskip;
+        }
     }
 }
 
 void dJointSetLMotorAxis( dJointID j, int anum, int rel, dReal x, dReal y, dReal z )
 {
     dxJointLMotor* joint = ( dxJointLMotor* )j;
-//for now we are ignoring rel!
+    //for now we are ignoring rel!
     dAASSERT( joint && anum >= 0 && anum <= 2 && rel >= 0 && rel <= 2 );
     checktype( joint, LMotor );
 
@@ -114,12 +126,12 @@ void dJointSetLMotorAxis( dJointID j, int anum, int rel, dReal x, dReal y, dReal
     {
         if ( rel == 1 )
         {
-            dMULTIPLY1_331( joint->axis[anum], joint->node[0].body->posr.R, r );
+            dMultiply1_331( joint->axis[anum], joint->node[0].body->posr.R, r );
         }
         else
         {
             //second body has to exists thanks to ref 1 line
-            dMULTIPLY1_331( joint->axis[anum], joint->node[1].body->posr.R, r );
+            dMultiply1_331( joint->axis[anum], joint->node[1].body->posr.R, r );
         }
     }
     else

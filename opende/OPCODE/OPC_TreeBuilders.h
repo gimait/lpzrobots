@@ -39,6 +39,7 @@
 	struct OPCODE_API BuildSettings
 	{
 		inline_	BuildSettings() : mLimit(1), mRules(SPLIT_FORCE_DWORD)	{}
+        inline_ explicit BuildSettings(udword Rules) : mLimit(1), mRules(Rules)	{}
 
 		udword	mLimit;		//!< Limit number of primitives / node. If limit is 1, build a complete tree (2*N-1 nodes)
 		udword	mRules;		//!< Building/Splitting rules (a combination of SplittingRules flags)
@@ -76,6 +77,7 @@
 		 */
 		///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 		virtual						float			GetSplittingValue(udword index, udword axis)	const	= 0;
+		virtual						Point			GetSplittingValues(udword index)		const	= 0;
 
 		///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 		/**
@@ -87,7 +89,7 @@
 		 *	\return		splitting value
 		 */
 		///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-		virtual						float			GetSplittingValue(const dTriIndex* primitives, udword nb_prims, const AABB& global_box, udword axis)	const
+		virtual						float			GetSplittingValue(const dTriIndex* /*primitives*/, udword /*nb_prims*/, const AABB& global_box, udword axis)	const
 													{
 														// Default split value = middle of the axis (using only the box)
 														return global_box.GetCenter(axis);
@@ -102,7 +104,7 @@
 		 *	\return		TRUE if the node should be subdivised
 		 */
 		///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-		virtual						BOOL			ValidateSubdivision(const dTriIndex* primitives, udword nb_prims, const AABB& global_box)
+		virtual						BOOL			ValidateSubdivision(const dTriIndex* /*primitives*/, udword nb_prims, const AABB& /*global_box*/)
 													{
 														// Check the user-defined limit
 														if(nb_prims<=mSettings.mLimit)	return FALSE;
@@ -136,6 +138,7 @@
 
 		override(AABBTreeBuilder)	bool			ComputeGlobalBox(const dTriIndex* primitives, udword nb_prims, AABB& global_box)	const;
 		override(AABBTreeBuilder)	float			GetSplittingValue(udword index, udword axis)									const;
+		override(AABBTreeBuilder)	Point			GetSplittingValues(udword index) const;
 		override(AABBTreeBuilder)	float			GetSplittingValue(const dTriIndex* primitives, udword nb_prims, const AABB& global_box, udword axis)	const;
 
 		const						Point*			mVertexArray;		//!< Shortcut to an app-controlled array of vertices.
@@ -151,6 +154,7 @@
 
 		override(AABBTreeBuilder)	bool			ComputeGlobalBox(const dTriIndex* primitives, udword nb_prims, AABB& global_box)	const;
 		override(AABBTreeBuilder)	float			GetSplittingValue(udword index, udword axis)									const;
+		override(AABBTreeBuilder)	Point			GetSplittingValues(udword index) const;
 
 		const						AABB*			mAABBArray;			//!< Shortcut to an app-controlled array of AABBs.
 	};
@@ -166,6 +170,7 @@
 		override(AABBTreeBuilder)	bool			ComputeGlobalBox(const dTriIndex* primitives, udword nb_prims, AABB& global_box)	const;
 		override(AABBTreeBuilder)	float			GetSplittingValue(udword index, udword axis)									const;
 		override(AABBTreeBuilder)	float			GetSplittingValue(const dTriIndex* primitives, udword nb_prims, const AABB& global_box, udword axis)	const;
+		override(AABBTreeBuilder)	Point			GetSplittingValues(udword index) const;
 
 		const				MeshInterface*			mIMesh;			//!< Shortcut to an app-controlled mesh interface
 	};

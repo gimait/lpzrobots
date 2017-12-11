@@ -1,4 +1,16 @@
-AM_CPPFLAGS = -I$(top_srcdir)/include
+AM_CPPFLAGS = -I$(top_srcdir)/include \
+        -I$(top_builddir)/include \
+        -I$(top_srcdir)/ode/src \
+        -D__ODE__
+
+
+if ENABLE_OU
+
+AM_CPPFLAGS += -I$(top_srcdir)/ou/include
+
+
+endif
+
 
 noinst_LTLIBRARIES = libjoints.la
 
@@ -6,6 +18,9 @@ libjoints_la_SOURCES =  joints.h \
                         joint.h joint.cpp \
                         joint_internal.h \
                         ball.h ball.cpp \
+                        dball.h dball.cpp \
+                        dhinge.h dhinge.cpp \
+                        transmission.h transmission.cpp \
                         hinge.h hinge.cpp \
                         slider.h slider.cpp \
                         contact.h contact.cpp \

@@ -21,6 +21,8 @@
  *************************************************************************/
 
 
+#include <ode/odeconfig.h>
+#include "config.h"
 #include "null.h"
 #include "joint_internal.h"
 
@@ -29,9 +31,16 @@
 //****************************************************************************
 // null joint
 dxJointNull::dxJointNull( dxWorld *w ) :
-        dxJoint( w )
+    dxJoint( w )
 {
 }
+
+void 
+dxJointNull::getSureMaxInfo( SureMaxInfo* info )
+{
+    info->max_m = 0;
+}
+
 
 void
 dxJointNull::getInfo1( dxJoint::Info1 *info )
@@ -42,7 +51,10 @@ dxJointNull::getInfo1( dxJoint::Info1 *info )
 
 
 void
-dxJointNull::getInfo2( dxJoint::Info2 *info )
+dxJointNull::getInfo2( dReal /*worldFPS*/, dReal /*worldERP*/, 
+    int rowskip, dReal *J1, dReal *J2,
+    int pairskip, dReal *pairRhsCfm, dReal *pairLoHi, 
+    int *findex )
 {
     dDebug( 0, "this should never get called" );
 }

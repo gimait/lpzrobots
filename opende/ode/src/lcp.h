@@ -24,9 +24,9 @@
 
 given (A,b,lo,hi), solve the LCP problem: A*x = b+w, where each x(i),w(i)
 satisfies one of
-	(1) x = lo, w >= 0
-	(2) x = hi, w <= 0
-	(3) lo < x < hi, w = 0
+    (1) x = lo, w >= 0
+    (2) x = hi, w <= 0
+    (3) lo < x < hi, w = 0
 A is a matrix of dimension n*n, everything else is a vector of size n*1.
 lo and hi can be +/- dInfinity as needed. the first `nub' variables are
 unbounded, i.e. hi and lo are assumed to be +/- dInfinity.
@@ -39,8 +39,8 @@ if the `findex' (friction index) parameter is nonzero, it points to an array
 of index values. in this case constraints that have findex[i] >= 0 are
 special. all non-special constraints are solved for, then the lo and hi values
 for the special constraints are set:
-  hi[i] = abs( hi[i] * x[findex[i]] )
-  lo[i] = -hi[i]
+    hi[i] = abs( hi[i] * x[findex[i]] )
+    lo[i] = -hi[i]
 and the solution continues. this mechanism allows a friction approximation
 to be implemented. the first `nub' variables are assumed to have findex < 0.
 
@@ -50,9 +50,32 @@ to be implemented. the first `nub' variables are assumed to have findex < 0.
 #ifndef _ODE_LCP_H_
 #define _ODE_LCP_H_
 
+class dxWorldProcessMemArena;
 
-void dSolveLCP (int n, dReal *A, dReal *x, dReal *b, dReal *w,
-		int nub, dReal *lo, dReal *hi, int *findex);
+enum dxLCPBXElement
+{
+    PBX__MIN,
 
+    PBX_B = PBX__MIN,
+    PBX_X,
+
+    PBX__MAX,
+};
+
+enum dxLCPLHElement
+{
+    PLH__MIN,
+
+    PLH_LO = PLH__MIN,
+    PLH_HI,
+
+    PLH__MAX,
+};
+
+void dxSolveLCP (dxWorldProcessMemArena *memarena, 
+    unsigned n, dReal *A, dReal pairsbx[PBX__MAX], dReal *w,
+    unsigned nub, dReal pairslh[PLH__MAX], int *findex);
+
+size_t dxEstimateSolveLCPMemoryReq(unsigned n, bool outer_w_avail);
 
 #endif

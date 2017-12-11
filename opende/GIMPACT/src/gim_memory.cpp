@@ -30,7 +30,7 @@ email: projectileman@yahoo.com
 #include <assert.h>
 #include <stdlib.h>
 #include "GIMPACT/gim_memory.h"
-#include <ode-dbl/odeconfig.h>
+#include <ode/odeconfig.h>
 #include "config.h"
 //#include "malloc.h"
 //#include "mm_malloc.h"
@@ -254,10 +254,12 @@ static GPTR _shared_buffer_alloc_data_function(const void * pdata,GUINT32 size,i
     return (GPTR)pdata;
 }
 
+#if 0
 static GPTR _shared_buffer_realloc_function(GPTR buffer_handle,GUINT32 oldsize,int old_usage,GUINT32 newsize,int new_usage)
 {
     return 0;
 }
+#endif
 
 static void _shared_buffer_free_function(GPTR buffer_handle,GUINT32 size)
 {

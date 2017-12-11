@@ -22,13 +22,60 @@
 
 // TriMesh test by Erwin de Vries
 
-#include <ode-dbl/ode.h>
+#include <ode/ode.h>
 #include <drawstuff/drawstuff.h>
 #include "texturepath.h"
 
 #ifdef _MSC_VER
 #pragma warning(disable:4244 4305)  // for VC++, no precision loss complaints
 #endif
+
+//<---- Convex Object
+static const dReal planes[] =  // planes for a cube
+{
+    1.0f ,0.0f ,0.0f ,0.25f, 
+    0.0f ,1.0f ,0.0f ,0.25f, 
+    0.0f ,0.0f ,1.0f ,0.25f, 
+    0.0f ,0.0f ,-1.0f,0.25f, 
+    0.0f ,-1.0f,0.0f ,0.25f, 
+    -1.0f,0.0f ,0.0f ,0.25f 
+    /* 
+    1.0f ,0.0f ,0.0f ,2.0f, 
+    0.0f ,1.0f ,0.0f ,1.0f, 
+    0.0f ,0.0f ,1.0f ,1.0f, 
+    0.0f ,0.0f ,-1.0f,1.0f, 
+    0.0f ,-1.0f,0.0f ,1.0f, 
+    -1.0f,0.0f ,0.0f ,0.0f 
+    */ 
+};
+static const unsigned int planecount=6;
+
+static const dReal points[] = // points for a cube
+{ 
+    0.25f,0.25f,0.25f,  
+    -0.25f,0.25f,0.25f, 
+    
+    0.25f,-0.25f,0.25f, 
+    -0.25f,-0.25f,0.25f, 
+    
+    0.25f,0.25f,-0.25f, 
+    -0.25f,0.25f,-0.25f, 
+    
+    0.25f,-0.25f,-0.25f, 
+    -0.25f,-0.25f,-0.25f, 
+};
+static const unsigned int pointcount=8;
+
+static const unsigned int polygons[] = //Polygons for a cube (6 squares)
+  {
+    4,0,2,6,4, // positive X
+    4,1,0,4,5, // positive Y
+    4,0,1,3,2, // positive Z
+    4,3,1,5,7, // negative X
+    4,2,3,7,6, // negative Y
+    4,5,4,6,7, // negative Z
+  };
+//----> Convex Object
 
 // select correct drawing functions
 
@@ -39,6 +86,7 @@
 #define dsDrawCapsule dsDrawCapsuleD
 #define dsDrawLine dsDrawLineD
 #define dsDrawTriangle dsDrawTriangleD
+#define dsDrawConvex dsDrawConvexD
 #endif
 
 
@@ -82,7 +130,7 @@ static dGeomID Ray;
 // this is called by dSpaceCollide when two objects in space are
 // potentially colliding.
 
-static void nearCallback (void *data, dGeomID o1, dGeomID o2)
+static void nearCallback (void *, dGeomID o1, dGeomID o2)
 {
   int i;
   // if (o1->body && o2->body) return;
@@ -143,6 +191,7 @@ static void start()
   printf ("   b for box.\n");
   printf ("   s for sphere.\n");
   printf ("   c for cylinder.\n");
+  printf( "   v for a convex.\n" );
   printf ("   x for a composite object.\n");
   printf ("To select an object, press space.\n");
   printf ("To disable the selected object, press d.\n");
@@ -167,9 +216,10 @@ static void command (int cmd)
   int i,j,k;
   dReal sides[3];
   dMass m;
+  bool setBody = false;
 
   cmd = locase (cmd);
-  if (cmd == 'b' || cmd == 's' || cmd == 'c' || cmd == 'x'
+  if (cmd == 'b' || cmd == 's' || cmd == 'c' || cmd == 'x' || cmd == 'v' 
       /* || cmd == 'l' */) {
     if (num < NUM) {
       i = num;
@@ -233,66 +283,75 @@ static void command (int cmd)
       obj[i].geom[0] = dCreateSphere (space,sides[0]);
     }
     else if (cmd == 'x') {
-      dGeomID g2[GPB];		// encapsulated geometries
-      dReal dpos[GPB][3];	// delta-positions for encapsulated geometries
+ 
+            setBody = true;
+            // start accumulating masses for the composite geometries
+            dMass m2;
+            dMassSetZero (&m);
 
-      // start accumulating masses for the encapsulated geometries
-      dMass m2;
-      dMassSetZero (&m);
+            dReal dpos[GPB][3];	// delta-positions for composite geometries
+            dMatrix3 drot[GPB];
+      
+            // set random delta positions
+            for (j=0; j<GPB; j++)
+                for (k=0; k<3; k++)
+                    dpos[j][k] = dRandReal()*0.3-0.15;
+    
+            for (k=0; k<GPB; k++) {
+                if (k==0) {
+                    dReal radius = dRandReal()*0.25+0.05;
+                    obj[i].geom[k] = dCreateSphere (space,radius);
+                    dMassSetSphere (&m2,DENSITY,radius);
+                } else if (k==1) {
+                    obj[i].geom[k] = dCreateBox(space,sides[0],sides[1],sides[2]);
+                    dMassSetBox(&m2,DENSITY,sides[0],sides[1],sides[2]);
+                } else {
+                    dReal radius = dRandReal()*0.1+0.05;
+                    dReal length = dRandReal()*1.0+0.1;
+                    obj[i].geom[k] = dCreateCapsule(space,radius,length);
+                    dMassSetCapsule(&m2,DENSITY,3,radius,length);
+                }
 
-      // set random delta positions
-      for (j=0; j<GPB; j++) {
-	for (k=0; k<3; k++) dpos[j][k] = dRandReal()*0.3-0.15;
-      }
+                dRFromAxisAndAngle(drot[k],dRandReal()*2.0-1.0,dRandReal()*2.0-1.0,
+                                   dRandReal()*2.0-1.0,dRandReal()*10.0-5.0);
+                dMassRotate(&m2,drot[k]);
+		
+                dMassTranslate(&m2,dpos[k][0],dpos[k][1],dpos[k][2]);
 
-      for (k=0; k<GPB; k++) {
-	obj[i].geom[k] = dCreateGeomTransform (space);
-	dGeomTransformSetCleanup (obj[i].geom[k],1);
-	if (k==0) {
-	  dReal radius = dRandReal()*0.25+0.05;
-	  g2[k] = dCreateSphere (0,radius);
-	  dMassSetSphere (&m2,DENSITY,radius);
-	}
-	else if (k==1) {
-	  g2[k] = dCreateBox (0,sides[0],sides[1],sides[2]);
-	  dMassSetBox (&m2,DENSITY,sides[0],sides[1],sides[2]);
-	}
-	else {
-	  dReal radius = dRandReal()*0.1+0.05;
-	  dReal length = dRandReal()*1.0+0.1;
-	  g2[k] = dCreateCapsule (0,radius,length);
-	  dMassSetCapsule (&m2,DENSITY,3,radius,length);
-	}
-	dGeomTransformSetGeom (obj[i].geom[k],g2[k]);
+                // add to the total mass
+                dMassAdd(&m,&m2);
 
-	// set the transformation (adjust the mass too)
-	dGeomSetPosition (g2[k],dpos[k][0],dpos[k][1],dpos[k][2]);
-	dMassTranslate (&m2,dpos[k][0],dpos[k][1],dpos[k][2]);
-	dMatrix3 Rtx;
-	dRFromAxisAndAngle (Rtx,dRandReal()*2.0-1.0,dRandReal()*2.0-1.0,
-			    dRandReal()*2.0-1.0,dRandReal()*10.0-5.0);
-	dGeomSetRotation (g2[k],Rtx);
-	dMassRotate (&m2,Rtx);
+            }
+            for (k=0; k<GPB; k++) {
+                dGeomSetBody(obj[i].geom[k],obj[i].body);
+                dGeomSetOffsetPosition(obj[i].geom[k],
+                                       dpos[k][0]-m.c[0],
+                                       dpos[k][1]-m.c[1],
+                                       dpos[k][2]-m.c[2]);
+                dGeomSetOffsetRotation(obj[i].geom[k], drot[k]);
+            }
+            dMassTranslate(&m,-m.c[0],-m.c[1],-m.c[2]);
+            dBodySetMass(obj[i].body,&m);
 
-	// add to the total mass
-	dMassAdd (&m,&m2);
-      }
+        } else if (cmd == 'v') {
 
-      // move all encapsulated objects so that the center of mass is (0,0,0)
-      for (k=0; k<2; k++) {
-	dGeomSetPosition (g2[k],
-			  dpos[k][0]-m.c[0],
-			  dpos[k][1]-m.c[1],
-			  dpos[k][2]-m.c[2]);
-      }
-      dMassTranslate (&m,-m.c[0],-m.c[1],-m.c[2]);
-    }
+            dMassSetBox (&m,DENSITY,0.25,0.25,0.25);
 
-    for (k=0; k < GPB; k++) {
-      if (obj[i].geom[k]) dGeomSetBody (obj[i].geom[k],obj[i].body);
-    }
+            obj[i].geom[0] = dCreateConvex(space,
+                                           planes,
+                                           planecount,
+                                           points,
+                                           pointcount,
+                                           polygons);
+        }
 
-    dBodySetMass (obj[i].body,&m);
+        if (!setBody) { // avoid calling for composite geometries
+            for (k=0; k < GPB; k++)
+                if (obj[i].geom[k])
+                    dGeomSetBody(obj[i].geom[k],obj[i].body);
+
+            dBodySetMass(obj[i].body,&m);
+        }
   }
 
   if (cmd == ' ') {
@@ -339,6 +398,13 @@ void drawGeom (dGeomID g, const dReal *pos, const dReal *R, int show_aabb)
     dReal radius,length;
     dGeomCapsuleGetParams (g,&radius,&length);
     dsDrawCapsule (pos,R,length,radius);
+  } else if (type == dConvexClass) {
+   //dVector3 sides={0.50,0.50,0.50};
+    dsDrawConvex(pos,R,planes,
+                 planecount,
+                 points,
+                 pointcount,
+                 polygons);
   }
 /*
   // cylinder option not yet implemented
@@ -348,19 +414,6 @@ void drawGeom (dGeomID g, const dReal *pos, const dReal *R, int show_aabb)
     dsDrawCylinder (pos,R,length,radius);
   }
 */
-  else if (type == dGeomTransformClass) {
-    dGeomID g2 = dGeomTransformGetGeom (g);
-    const dReal *pos2 = dGeomGetPosition (g2);
-    const dReal *R2 = dGeomGetRotation (g2);
-    dVector3 actual_pos;
-    dMatrix3 actual_R;
-    dMULTIPLY0_331 (actual_pos,R,pos2);
-    actual_pos[0] += pos[0];
-    actual_pos[1] += pos[1];
-    actual_pos[2] += pos[2];
-    dMULTIPLY0_333 (actual_R,R,R2);
-    drawGeom (g2,actual_pos,actual_R,0);
-  }
 
   if (show_aabb) {
     // draw the bounding box for this geom
@@ -509,6 +562,7 @@ int main (int argc, char **argv)
 
   //dGeomTriMeshDataBuildSimple(Data, (dReal*)Vertices, VertexCount, Indices, IndexCount);
   dGeomTriMeshDataBuildSingle(Data, Vertices[0], 3 * sizeof(float), VertexCount, &Indices[0], IndexCount, 3 * sizeof(dTriIndex));
+  dGeomTriMeshDataPreprocess2(Data, (1U << dTRIDATAPREPROCESS_BUILD_FACE_ANGLES), NULL);
 
   TriMesh = dCreateTriMesh(space, Data, 0, 0, 0);
 
@@ -529,8 +583,19 @@ int main (int argc, char **argv)
   
   dGeomRaySet(Ray, Origin[0], Origin[1], Origin[2], Direction[0], Direction[1], Direction[2]);
   
+  dThreadingImplementationID threading = dThreadingAllocateMultiThreadedImplementation();
+  dThreadingThreadPoolID pool = dThreadingAllocateThreadPool(4, 0, dAllocateFlagBasicData, NULL);
+  dThreadingThreadPoolServeMultiThreadedImplementation(pool, threading);
+  // dWorldSetStepIslandsProcessingMaxThreadCount(world, 1);
+  dWorldSetStepThreadingImplementation(world, dThreadingImplementationGetFunctions(threading), threading);
+
   // run simulation
   dsSimulationLoop (argc,argv,352,288,&fn);
+
+  dThreadingImplementationShutdownProcessing(threading);
+  dThreadingFreeThreadPool(pool);
+  dWorldSetStepThreadingImplementation(world, NULL, NULL);
+  dThreadingFreeImplementation(threading);
 
   dJointGroupDestroy (contactgroup);
   dSpaceDestroy (space);

@@ -30,8 +30,9 @@
 #include <iostream>
 
 #include <UnitTest++.h>
-#include <ode-dbl/ode.h>
+#include <ode/ode.h>
 
+#include "../../ode/src/config.h"
 #include "../../ode/src/joints/universal.h"
 
 dReal d2r(dReal degree)
@@ -344,7 +345,7 @@ SUITE (TestdxJointUniversal)
         dNormalize3(axis2);
 
         dVector3 cross;
-        dCROSS(cross, =, axis1, axis2);
+        dCalcVectorCross3(cross, axis1, axis2);
         dJointSetUniversalAxis1(jId, axis1[0], axis1[1], axis1[2]);
         dJointSetUniversalAxis2(jId, cross[0], cross[1], cross[2]);
 
@@ -585,12 +586,12 @@ SUITE (TestdxJointUniversal)
         dJointGetUniversalAnchor (jId, anchor1);
         dJointGetUniversalAnchor2 (jId, anchor2);
         CHECK_CLOSE (anchor1[0], anchorOrig1[0] , 1e-4);
-        CHECK_CLOSE (anchor1[0], anchorOrig1[0] , 1e-4);
-        CHECK_CLOSE (anchor1[0], anchorOrig1[0] , 1e-4);
+        CHECK_CLOSE (anchor1[1], anchorOrig1[1] , 1e-4);
+        CHECK_CLOSE (anchor1[2], anchorOrig1[2] , 1e-4);
 
         CHECK_CLOSE (anchor2[0], anchorOrig2[0] , 1e-4);
-        CHECK_CLOSE (anchor2[0], anchorOrig2[0] , 1e-4);
-        CHECK_CLOSE (anchor2[0], anchorOrig2[0] , 1e-4);
+        CHECK_CLOSE (anchor2[1], anchorOrig2[1] , 1e-4);
+        CHECK_CLOSE (anchor2[2], anchorOrig2[2] , 1e-4);
     }
 
 
@@ -2031,7 +2032,7 @@ SUITE (TestdxJointUniversal)
             axis[2] = -REAL(0.33);
 
             dVector3 axis2;
-            dCROSS(axis2, =, axis1, axis);
+            dCalcVectorCross3(axis2, axis1, axis);
 
             dJointSetUniversalAxis1(jId, axis1[0], axis1[1], axis1[2]);
             dJointSetUniversalAxis2(jId, axis2[0], axis2[1], axis2[2]);

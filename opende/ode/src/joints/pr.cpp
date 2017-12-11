@@ -21,6 +21,8 @@
  *************************************************************************/
 
 
+#include <ode/odeconfig.h>
+#include "config.h"
 #include "pr.h"
 #include "joint_internal.h"
 
@@ -30,7 +32,7 @@
 // Prismatic and Rotoide
 
 dxJointPR::dxJointPR( dxWorld *w ) :
-        dxJoint( w )
+    dxJoint( w )
 {
     // Default Position
     // Z^
@@ -66,21 +68,21 @@ dReal dJointGetPRPosition( dJointID j )
 
     dVector3 q;
     // get the offset in global coordinates
-    dMULTIPLY0_331( q, joint->node[0].body->posr.R, joint->offset );
+    dMultiply0_331( q, joint->node[0].body->posr.R, joint->offset );
 
     if ( joint->node[1].body )
     {
         dVector3 anchor2;
 
         // get the anchor2 in global coordinates
-        dMULTIPLY0_331( anchor2, joint->node[1].body->posr.R, joint->anchor2 );
+        dMultiply0_331( anchor2, joint->node[1].body->posr.R, joint->anchor2 );
 
         q[0] = (( joint->node[0].body->posr.pos[0] + q[0] ) -
-                ( joint->node[1].body->posr.pos[0] + anchor2[0] ) );
+            ( joint->node[1].body->posr.pos[0] + anchor2[0] ) );
         q[1] = (( joint->node[0].body->posr.pos[1] + q[1] ) -
-                ( joint->node[1].body->posr.pos[1] + anchor2[1] ) );
+            ( joint->node[1].body->posr.pos[1] + anchor2[1] ) );
         q[2] = (( joint->node[0].body->posr.pos[2] + q[2] ) -
-                ( joint->node[1].body->posr.pos[2] + anchor2[2] ) );
+            ( joint->node[1].body->posr.pos[2] + anchor2[2] ) );
 
     }
     else
@@ -89,11 +91,11 @@ dReal dJointGetPRPosition( dJointID j )
         //     global coordinates
 
         q[0] = (( joint->node[0].body->posr.pos[0] + q[0] ) -
-                ( joint->anchor2[0] ) );
+            ( joint->anchor2[0] ) );
         q[1] = (( joint->node[0].body->posr.pos[1] + q[1] ) -
-                ( joint->anchor2[1] ) );
+            ( joint->anchor2[1] ) );
         q[2] = (( joint->node[0].body->posr.pos[2] + q[2] ) -
-                ( joint->anchor2[2] ) );
+            ( joint->anchor2[2] ) );
 
         if ( joint->flags & dJOINT_REVERSE )
         {
@@ -105,9 +107,9 @@ dReal dJointGetPRPosition( dJointID j )
 
     dVector3 axP;
     // get prismatic axis in global coordinates
-    dMULTIPLY0_331( axP, joint->node[0].body->posr.R, joint->axisP1 );
+    dMultiply0_331( axP, joint->node[0].body->posr.R, joint->axisP1 );
 
-    return dDOT( axP, q );
+    return dCalcVectorDot3( axP, q );
 }
 
 dReal dJointGetPRPositionRate( dJointID j )
@@ -117,17 +119,17 @@ dReal dJointGetPRPositionRate( dJointID j )
     checktype( joint, PR );
     // get axis1 in global coordinates
     dVector3 ax1;
-    dMULTIPLY0_331( ax1, joint->node[0].body->posr.R, joint->axisP1 );
+    dMultiply0_331( ax1, joint->node[0].body->posr.R, joint->axisP1 );
 
     if ( joint->node[1].body )
     {
         dVector3 lv2;
         dBodyGetRelPointVel( joint->node[1].body, joint->anchor2[0], joint->anchor2[1], joint->anchor2[2], lv2 );
-        return dDOT( ax1, joint->node[0].body->lvel ) - dDOT( ax1, lv2 );
+        return dCalcVectorDot3( ax1, joint->node[0].body->lvel ) - dCalcVectorDot3( ax1, lv2 );
     }
     else
     {
-        dReal rate = dDOT( ax1, joint->node[0].body->lvel );
+        dReal rate = dCalcVectorDot3( ax1, joint->node[0].body->lvel );
         return ( (joint->flags & dJOINT_REVERSE) ? -rate : rate);
     }
 }
@@ -142,9 +144,9 @@ dReal dJointGetPRAngle( dJointID j )
     if ( joint->node[0].body )
     {
         dReal ang = getHingeAngle( joint->node[0].body,
-                                   joint->node[1].body,
-                                   joint->axisR1,
-                                   joint->qrel );
+            joint->node[1].body,
+            joint->axisR1,
+            joint->qrel );
         if ( joint->flags & dJOINT_REVERSE )
             return -ang;
         else
@@ -163,15 +165,23 @@ dReal dJointGetPRAngleRate( dJointID j )
     if ( joint->node[0].body )
     {
         dVector3 axis;
-        dMULTIPLY0_331( axis, joint->node[0].body->posr.R, joint->axisR1 );
-        dReal rate = dDOT( axis, joint->node[0].body->avel );
-        if ( joint->node[1].body ) rate -= dDOT( axis, joint->node[1].body->avel );
+        dMultiply0_331( axis, joint->node[0].body->posr.R, joint->axisR1 );
+        dReal rate = dCalcVectorDot3( axis, joint->node[0].body->avel );
+        if ( joint->node[1].body ) rate -= dCalcVectorDot3( axis, joint->node[1].body->avel );
         if ( joint->flags & dJOINT_REVERSE ) rate = -rate;
         return rate;
     }
     else return 0;
 }
 
+
+
+
+void 
+dxJointPR::getSureMaxInfo( SureMaxInfo* info )
+{
+    info->max_m = 6;
+}
 
 
 
@@ -185,7 +195,7 @@ dxJointPR::getInfo1( dxJoint::Info1 *info )
     // see if we're at a joint limit.
     limotP.limit = 0;
     if (( limotP.lostop > -dInfinity || limotP.histop < dInfinity ) &&
-            limotP.lostop <= limotP.histop )
+        limotP.lostop <= limotP.histop )
     {
         // measure joint position
         dReal pos = dJointGetPRPosition( this );
@@ -199,11 +209,11 @@ dxJointPR::getInfo1( dxJoint::Info1 *info )
     // see if we're at a joint limit.
     limotR.limit = 0;
     if (( limotR.lostop >= -M_PI || limotR.histop <= M_PI ) &&
-            limotR.lostop <= limotR.histop )
+        limotR.lostop <= limotR.histop )
     {
         dReal angle = getHingeAngle( node[0].body,
-                                     node[1].body,
-                                     axisR1, qrel );
+            node[1].body,
+            axisR1, qrel );
         limotR.testRotationalLimit( angle );
     }
 
@@ -215,14 +225,12 @@ dxJointPR::getInfo1( dxJoint::Info1 *info )
 
 
 void
-dxJointPR::getInfo2( dxJoint::Info2 *info )
+dxJointPR::getInfo2( dReal worldFPS, dReal worldERP, 
+    int rowskip, dReal *J1, dReal *J2,
+    int pairskip, dReal *pairRhsCfm, dReal *pairLoHi, 
+    int *findex )
 {
-    int s = info->rowskip;
-    int s2 = 2 * s;
-    int s3 = 3 * s;
-    //int s4= 4*s;
-
-    dReal k = info->fps * info->erp;
+    dReal k = worldFPS * worldERP;
 
 
     dVector3 q;  // plane space of axP and after that axR
@@ -230,49 +238,44 @@ dxJointPR::getInfo2( dxJoint::Info2 *info )
     // pull out pos and R for both bodies. also get the `connection'
     // vector pos2-pos1.
 
-    dReal *pos1, *pos2 = 0, *R1, *R2 = 0;
-    pos1 = node[0].body->posr.pos;
-    R1 = node[0].body->posr.R;
-    if ( node[1].body )
+    dReal *pos2 = NULL, *R2 = NULL;
+    
+    dReal *pos1 = node[0].body->posr.pos;
+    dReal *R1 = node[0].body->posr.R;
+
+    dxBody *body1 = node[1].body;
+
+    if ( body1 )
     {
-        pos2 = node[1].body->posr.pos;
-        R2 = node[1].body->posr.R;
-    }
-    else
-    {
-        //     pos2 = 0; // N.B. We can do that to be safe but it is no necessary
-        //     R2 = 0;   // N.B. We can do that to be safe but it is no necessary
+        pos2 = body1->posr.pos;
+        R2 = body1->posr.R;
     }
 
 
     dVector3 axP; // Axis of the prismatic joint in global frame
-    dMULTIPLY0_331( axP, R1, axisP1 );
+    dMultiply0_331( axP, R1, axisP1 );
 
     // distance between the body1 and the anchor2 in global frame
     // Calculated in the same way as the offset
-    dVector3 wanchor2 = {0,0,0}, dist;
+    dVector3 wanchor2 = {0, 0, 0}, dist;
 
-    if ( node[1].body )
+    if ( body1 )
     {
         // Calculate anchor2 in world coordinate
-        dMULTIPLY0_331( wanchor2, R2, anchor2 );
+        dMultiply0_331( wanchor2, R2, anchor2 );
         dist[0] = wanchor2[0] + pos2[0] - pos1[0];
         dist[1] = wanchor2[1] + pos2[1] - pos1[1];
         dist[2] = wanchor2[2] + pos2[2] - pos1[2];
     }
     else
     {
-        if (flags & dJOINT_REVERSE )
+        if ( (flags & dJOINT_REVERSE) != 0 )
         {
-            dist[0] = pos1[0] - anchor2[0]; // Invert the value
-            dist[1] = pos1[1] - anchor2[1];
-            dist[2] = pos1[2] - anchor2[2];
+            dSubtractVectors3(dist, pos1, anchor2); // Invert the value
         }
         else
         {
-            dist[0] = anchor2[0] - pos1[0];
-            dist[1] = anchor2[1] - pos1[1];
-            dist[2] = anchor2[2] - pos1[2];
+            dSubtractVectors3(dist, anchor2, pos1); // Invert the value
         }
     }
 
@@ -287,27 +290,24 @@ dxJointPR::getInfo2( dxJoint::Info2 *info )
     //    q*w1 - q*w2 = 0
     // where p and q are unit vectors normal to the rotoide axis, and w1 and w2
     // are the angular velocity vectors of the two bodies.
+    dVector3 ax2;
     dVector3 ax1;
-    dMULTIPLY0_331( ax1, node[0].body->posr.R, axisR1 );
-    dCROSS( q , = , ax1, axP );
+    dMultiply0_331( ax1, R1, axisR1 );
+    dCalcVectorCross3( q , ax1, axP );
 
-    info->J1a[0] = axP[0];
-    info->J1a[1] = axP[1];
-    info->J1a[2] = axP[2];
-    info->J1a[s+0] = q[0];
-    info->J1a[s+1] = q[1];
-    info->J1a[s+2] = q[2];
+    dCopyVector3(J1 + GI2__JA_MIN, axP);
 
-    if ( node[1].body )
+    if ( body1 )
     {
-        info->J2a[0] = -axP[0];
-        info->J2a[1] = -axP[1];
-        info->J2a[2] = -axP[2];
-        info->J2a[s+0] = -q[0];
-        info->J2a[s+1] = -q[1];
-        info->J2a[s+2] = -q[2];
+        dCopyNegatedVector3(J2 + GI2__JA_MIN, axP);
     }
 
+    dCopyVector3(J1 + rowskip + GI2__JA_MIN, q);
+
+    if ( body1 )
+    {
+        dCopyNegatedVector3(J2 + rowskip + GI2__JA_MIN, q);
+    }
 
     // Compute the right hand side of the constraint equation set. Relative
     // body velocities along p and q to bring the rotoide back into alignment.
@@ -325,22 +325,19 @@ dxJointPR::getInfo2( dxJoint::Info2 *info )
     // ax1 x ax2 is in the plane space of ax1, so we project the angular
     // velocity to p and q to find the right hand side.
 
-    dVector3 ax2;
-    if ( node[1].body )
+    if ( body1 )
     {
-        dMULTIPLY0_331( ax2, R2, axisR2 );
+        dMultiply0_331( ax2, R2, axisR2 );
     }
     else
     {
-        ax2[0] = axisR2[0];
-        ax2[1] = axisR2[1];
-        ax2[2] = axisR2[2];
+        dCopyVector3(ax2, axisR2);
     }
 
     dVector3 b;
-    dCROSS( b, = , ax1, ax2 );
-    info->c[0] = k * dDOT( b, axP );
-    info->c[1] = k * dDOT( b, q );
+    dCalcVectorCross3( b, ax1, ax2 );
+    pairRhsCfm[GI2_RHS] = k * dCalcVectorDot3( b, axP );
+    pairRhsCfm[pairskip + GI2_RHS] = k * dCalcVectorDot3( b, q );
 
 
 
@@ -371,37 +368,31 @@ dxJointPR::getInfo2( dxJoint::Info2 *info )
     // Coeff for 1er line of: J1a => dist x ax1, J2a => - anchor2 x ax1
     // Coeff for 2er line of: J1a => dist x q,   J2a => - anchor2 x q
 
-
-    dCROSS(( info->J1a ) + s2, = , dist, ax1 );
-
-    dCROSS(( info->J1a ) + s3, = , dist, q );
-
-
-    info->J1l[s2+0] = ax1[0];
-    info->J1l[s2+1] = ax1[1];
-    info->J1l[s2+2] = ax1[2];
-
-    info->J1l[s3+0] = q[0];
-    info->J1l[s3+1] = q[1];
-    info->J1l[s3+2] = q[2];
-
-    if ( node[1].body )
+    int currRowSkip = 2 * rowskip;
     {
-        // ax2 x anchor2 instead of anchor2 x ax2 since we want the negative value
-        dCROSS(( info->J2a ) + s2, = , ax2, wanchor2 );   // since ax1 == ax2
+        dCopyVector3( J1 + currRowSkip + GI2__JL_MIN, ax1 );
+        dCalcVectorCross3( J1 + currRowSkip + GI2__JA_MIN, dist, ax1 );
 
-        // The cross product is in reverse order since we want the negative value
-        dCROSS(( info->J2a ) + s3, = , q, wanchor2 );
-
-        info->J2l[s2+0] = -ax1[0];
-        info->J2l[s2+1] = -ax1[1];
-        info->J2l[s2+2] = -ax1[2];
-
-        info->J2l[s3+0] = -q[0];
-        info->J2l[s3+1] = -q[1];
-        info->J2l[s3+2] = -q[2];
+        if ( body1 )
+        {
+            dCopyNegatedVector3( J2 + currRowSkip + GI2__JL_MIN, ax1 );
+            // ax2 x anchor2 instead of anchor2 x ax2 since we want the negative value
+            dCalcVectorCross3( J2 + currRowSkip + GI2__JA_MIN, ax2, wanchor2 );   // since ax1 == ax2
+        }
     }
 
+    currRowSkip += rowskip;
+    {
+        dCopyVector3( J1 + currRowSkip + GI2__JL_MIN, q );
+        dCalcVectorCross3(J1 + currRowSkip + GI2__JA_MIN, dist, q );
+
+        if ( body1 )
+        {
+            dCopyNegatedVector3( J2 + currRowSkip + GI2__JL_MIN, q);
+            // The cross product is in reverse order since we want the negative value
+            dCalcVectorCross3( J2 + currRowSkip + GI2__JA_MIN, q, wanchor2 );
+        }
+    }
 
     // We want to make correction for motion not in the line of the axisP
     // We calculate the displacement w.r.t. the anchor pt.
@@ -410,28 +401,40 @@ dxJointPR::getInfo2( dxJoint::Info2 *info )
     // we want to align the offset point (in body 2's frame) with the center of body 1.
     // The position should be the same when we are not along the prismatic axis
     dVector3 err;
-    dMULTIPLY0_331( err, R1, offset );
-    err[0] = dist[0] - err[0];
-    err[1] = dist[1] - err[1];
-    err[2] = dist[2] - err[2];
-    info->c[2] = k * dDOT( ax1, err );
-    info->c[3] = k * dDOT( q, err );
+    dMultiply0_331( err, R1, offset );
+    dSubtractVectors3(err, dist, err);
 
-    int row = 4;
-    if (  node[1].body || !(flags & dJOINT_REVERSE) )
+    int currPairSkip = 2 * pairskip;
     {
-        row += limotP.addLimot ( this, info, 4, axP, 0 );
+        pairRhsCfm[currPairSkip + GI2_RHS] = k * dCalcVectorDot3( ax1, err );
+    }
+
+    currPairSkip += pairskip;
+    {
+        pairRhsCfm[currPairSkip + GI2_RHS] = k * dCalcVectorDot3( q, err );
+    }
+
+    currRowSkip += rowskip; currPairSkip += pairskip;
+
+    if (  body1 || (flags & dJOINT_REVERSE) == 0 )
+    {
+        if (limotP.addLimot ( this, worldFPS, J1 + currRowSkip, J2 + currRowSkip, pairRhsCfm + currPairSkip, pairLoHi + currPairSkip, axP, 0 ))
+        {
+            currRowSkip += rowskip; currPairSkip += pairskip;
+        }
     }
     else
     {
         dVector3 rAxP;
-        rAxP[0] = -axP[0];
-        rAxP[1] = -axP[1];
-        rAxP[2] = -axP[2];
-        row += limotP.addLimot ( this, info, 4, rAxP, 0 );
+        dCopyNegatedVector3(rAxP, axP);
+
+        if (limotP.addLimot ( this, worldFPS, J1 + currRowSkip, J2 + currRowSkip, pairRhsCfm + currPairSkip, pairLoHi + currPairSkip, rAxP, 0 ))
+        {
+            currRowSkip += rowskip; currPairSkip += pairskip;
+        }
     }
 
-    limotR.addLimot ( this, info, row, ax1, 1 );
+    limotR.addLimot ( this, worldFPS, J1 + currRowSkip, J2 + currRowSkip, pairRhsCfm + currPairSkip, pairLoHi + currPairSkip, ax1, 1 );
 }
 
 

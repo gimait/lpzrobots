@@ -37,7 +37,7 @@
 */
 
 
-#include <ode-dbl/ode.h>
+#include <ode/ode.h>
 #include <drawstuff/drawstuff.h>
 #include <iostream>
 #include <math.h>
@@ -139,13 +139,10 @@ const dReal RECT_SIDES[3] = {0.3, 0.1, 0.2};
 
 
 //collision detection
-static void nearCallback (void *data, dGeomID o1, dGeomID o2)
+static void nearCallback (void *, dGeomID o1, dGeomID o2)
 {
   int i,n;
 
-  dBodyID b1 = dGeomGetBody (o1);
-  dBodyID b2 = dGeomGetBody (o2);
-  if (b1 && b2 && dAreConnectedExcluding (b1,b2,dJointTypeContact) ) return;
   const int N = 10;
   dContact contact[N];
   n = dCollide (o1,o2,N,&contact[0].geom,sizeof (dContact) );
@@ -286,6 +283,7 @@ case 'h' : case 'H' : case '?' :
   case ',': case '<' : {
       dReal vel = joint->getParam (dParamVel3) - VEL_INC;
       joint->setParam (dParamVel3, vel);
+	  joint->setParam (dParamFMax3, 2);
       std::cout<<"Velocity = "<<vel<<"  FMax = 2"<<'\n';
     }
     break;
@@ -293,6 +291,7 @@ case 'h' : case 'H' : case '?' :
   case '.': case '>' : {
       dReal vel = joint->getParam (dParamVel3) + VEL_INC;
       joint->setParam (dParamVel3, vel);
+	  joint->setParam (dParamFMax3, 2);
       std::cout<<"Velocity = "<<vel<<"  FMax = 2"<<'\n';
     }
     break;
@@ -485,7 +484,7 @@ static void simLoop (int pause)
       dQtoR (qq,R);
 
 
-      dGeomCylinderGetParams (dGeomTransformGetGeom (geom[AXIS1]), &radius, &length);
+      dGeomCylinderGetParams (geom[AXIS1], &radius, &length);
       dsSetColor (1,0,0);
       dsDrawCylinder (anchorPos, R, length, radius);
     }
@@ -509,7 +508,7 @@ static void simLoop (int pause)
       dQtoR (qq1,R);
 
 
-      dGeomCylinderGetParams (dGeomTransformGetGeom (geom[AXIS2]), &radius, &length);
+      dGeomCylinderGetParams (geom[AXIS2], &radius, &length);
       dsSetColor (0,0,1);
       dsDrawCylinder (anchorPos, R, length, radius);
     }
@@ -627,13 +626,13 @@ int main (int argc, char **argv)
 
 
   // Create the external part of the slider joint
-  geom[EXT] = dCreateBox (space, extDim[X], extDim[Y], extDim[Z]);
+  geom[EXT] = dCreateBox (0, extDim[X], extDim[Y], extDim[Z]);
   dGeomSetCategoryBits (geom[EXT], catBits[EXT]);
   dGeomSetCollideBits (geom[EXT],
                        catBits[ALL] & (~catBits[JOINT]) & (~catBits[W]) & (~catBits[D]) );
 
   // Create the internal part of the slider joint
-  geom[INT] = dCreateBox (space, INT_EXT_RATIO*extDim[X],
+  geom[INT] = dCreateBox (0, INT_EXT_RATIO*extDim[X],
                           INT_EXT_RATIO*extDim[Y],
                           INT_EXT_RATIO*extDim[Z]);
   dGeomSetCategoryBits (geom[INT], catBits[INT]);
@@ -642,36 +641,30 @@ int main (int argc, char **argv)
 
 
   dMatrix3 R;
-  dGeomID id;
   // Create the first axis of the universal joi9nt
-  geom[AXIS1] = dCreateGeomTransform (space);
   //Rotation of 90deg around y
-  dRFromAxisAndAngle (R, 0,1,0, 0.5*PI);
-  dGeomSetRotation (geom[AXIS1], R);
-  dGeomSetCategoryBits (geom[AXIS1], catBits[AXIS1]);
-  dGeomSetCollideBits (geom[AXIS1],
-                       catBits[ALL]  & ~catBits[JOINT] & ~catBits[W] & ~catBits[D]);
-  id = geom[AXIS1];
-  dGeomTransformSetGeom (geom[AXIS1],  dCreateCylinder (0, axDim[RADIUS], axDim[LENGTH]) );
+  geom[AXIS1] = dCreateCylinder(0, axDim[RADIUS], axDim[LENGTH]);
+  dRFromAxisAndAngle(R, 0,1,0, 0.5*PI);
+  dGeomSetRotation(geom[AXIS1], R);
+  dGeomSetCategoryBits(geom[AXIS1], catBits[AXIS1]);
+  dGeomSetCollideBits(geom[AXIS1],
+                      catBits[ALL]  & ~catBits[JOINT] & ~catBits[W] & ~catBits[D]);
 
 
   // Create the second axis of the universal joint
-  geom[AXIS2] = dCreateGeomTransform (space);
+  geom[AXIS2] = dCreateCylinder(0, axDim[RADIUS], axDim[LENGTH]);
   //Rotation of 90deg around y
-  dRFromAxisAndAngle (R, 1,0,0, 0.5*PI);
-  dGeomSetRotation (geom[AXIS2], R);
-  dGeomSetCategoryBits (geom[AXIS2], catBits[AXIS2]);
-  dGeomSetCollideBits (geom[AXIS2],
-                       catBits[ALL]  & ~catBits[JOINT] & ~catBits[W] & ~catBits[D]);
-  id = geom[AXIS2];
-  dGeomTransformSetGeom (geom[AXIS2],  dCreateCylinder (0, axDim[RADIUS], axDim[LENGTH]) );
-
+  dRFromAxisAndAngle(R, 1,0,0, 0.5*PI);
+  dGeomSetRotation(geom[AXIS2], R);
+  dGeomSetCategoryBits(geom[AXIS2], catBits[AXIS2]);
+  dGeomSetCollideBits(geom[AXIS2],
+                      catBits[ALL]  & ~catBits[JOINT] & ~catBits[W] & ~catBits[D]);
 
   // Create the anchor
-  geom[ANCHOR] = dCreateBox (space, ancDim[X], ancDim[Y], ancDim[Z]);
-  dGeomSetCategoryBits (geom[ANCHOR], catBits[ANCHOR]);
-  dGeomSetCollideBits (geom[ANCHOR],
-                       catBits[ALL] & (~catBits[JOINT]) & (~catBits[W]) & (~catBits[D]) );
+  geom[ANCHOR] = dCreateBox (0, ancDim[X], ancDim[Y], ancDim[Z]);
+  dGeomSetCategoryBits(geom[ANCHOR], catBits[ANCHOR]);
+  dGeomSetCollideBits(geom[ANCHOR],
+                      catBits[ALL] & (~catBits[JOINT]) & (~catBits[W]) & (~catBits[D]) );
 
 
 
@@ -681,24 +674,24 @@ int main (int argc, char **argv)
 
 
   if (geom[EXT]) {
-    dGeomSetPosition (geom[EXT], 0,0,3.8);
+    dGeomSetPosition(geom[EXT], 0,0,3.8);
   }
   if (geom[INT]) {
-    dGeomSetPosition (geom[INT], 0,0,2.6);
+    dGeomSetPosition(geom[INT], 0,0,2.6);
   }
   if (geom[AXIS1]) {
-    dGeomSetPosition (geom[AXIS1], 0,0,2.5);
+    dGeomSetPosition(geom[AXIS1], 0,0,2.5);
   }
   if (geom[AXIS2]) {
-    dGeomSetPosition (geom[AXIS2], 0,0,2.5);
+    dGeomSetPosition(geom[AXIS2], 0,0,2.5);
   }
 
   if (geom[ANCHOR]) {
-    dGeomSetPosition (geom[ANCHOR], 0,0,2.25);
+    dGeomSetPosition(geom[ANCHOR], 0,0,2.25);
   }
 
   if (body[D]) {
-    dBodySetPosition (body[D], 0,0,1.5);
+    dBodySetPosition(body[D], 0,0,1.5);
   }
 
 

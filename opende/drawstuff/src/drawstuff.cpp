@@ -41,8 +41,9 @@ manage openGL state changes better
 #include <windows.h>
 #endif
 
-#include <ode-dbl/ode.h>
+#include <ode/ode.h>
 #include "config.h"
+
 #ifdef HAVE_APPLE_OPENGL_FRAMEWORK
 #include <OpenGL/gl.h>
 #include <OpenGL/glu.h>
@@ -106,6 +107,17 @@ static void normalizeVector3 (float v[3])
     v[1] *= len;
     v[2] *= len;
   }
+}
+
+static void crossProduct3(float res[3], const float a[3], const float b[3])
+{
+  float res_0 = a[1]*b[2] - a[2]*b[1];
+  float res_1 = a[2]*b[0] - a[0]*b[2];
+  float res_2 = a[0]*b[1] - a[1]*b[0];
+  // Only assign after all the calculations are over to avoid incurring memory aliasing
+  res[0] = res_0;
+  res[1] = res_1;
+  res[2] = res_2;
 }
 
 //***************************************************************************
@@ -382,10 +394,9 @@ static void setShadowTransform()
   glMultMatrixf (matrix);
 }
 
-static void drawConvex (float *_planes,unsigned int _planecount,
-			float *_points,
-			unsigned int _pointcount,
-			unsigned int *_polygons)
+static void drawConvex (const float *_planes, unsigned int _planecount,
+			const float *_points, unsigned int /*_pointcount*/,
+			const unsigned int *_polygons)
 {
   unsigned int polyindex=0;
   for(unsigned int i=0;i<_planecount;++i)
@@ -407,10 +418,9 @@ static void drawConvex (float *_planes,unsigned int _planecount,
     }
 }
 
-static void drawConvexD (double *_planes,unsigned int _planecount,
-			 double *_points,
-			 unsigned int _pointcount,
-			 unsigned int *_polygons)
+static void drawConvexD (const double *_planes, unsigned int _planecount,
+			 const double *_points, unsigned int /*_pointcount*/,
+			 const unsigned int *_polygons)
 {
   unsigned int polyindex=0;
   for(unsigned int i=0;i<_planecount;++i)
@@ -615,7 +625,7 @@ static void drawTriangle (const float *v0, const float *v1, const float *v2, int
   v[0] = v2[0] - v0[0];
   v[1] = v2[1] - v0[1];
   v[2] = v2[2] - v0[2];
-  dCROSS (normal,=,u,v);
+  crossProduct3(normal,u,v);
   normalizeVector3 (normal);
 
   glBegin(solid ? GL_TRIANGLES : GL_LINE_STRIP);
@@ -635,7 +645,7 @@ static void drawTriangleD (const double *v0, const double *v1, const double *v2,
   v[0] = float( v2[0] - v0[0] );
   v[1] = float( v2[1] - v0[1] );
   v[2] = float( v2[2] - v0[2] );
-  dCROSS (normal,=,u,v);
+  crossProduct3(normal,u,v);
   normalizeVector3 (normal);
 
   glBegin(solid ? GL_TRIANGLES : GL_LINE_STRIP);
@@ -884,7 +894,7 @@ static Texture *texture[4+1]; // +1 since index 0 is not used
 
 #if !defined(macintosh) || defined(ODE_PLATFORM_OSX)
 
-void dsStartGraphics (int width, int height, dsFunctions *fn)
+void dsStartGraphics (int /*width*/, int /*height*/, dsFunctions *fn)
 {
 
   const char *prefix = DEFAULT_PATH_TO_TEXTURES;
@@ -1367,10 +1377,9 @@ extern "C" void dsDrawBox (const float pos[3], const float R[12],
 }
 
 extern "C" void dsDrawConvex (const float pos[3], const float R[12],
-			      float *_planes,unsigned int _planecount,
-			      float *_points,
-			      unsigned int _pointcount,
-			      unsigned int *_polygons)
+			      const float *_planes,unsigned int _planecount,
+			      const float *_points, unsigned int _pointcount,
+			      const unsigned int *_polygons)
 {
   if (current_state != 2) dsError ("drawing function called outside simulation loop");
   setupDrawingMode();
@@ -1439,6 +1448,20 @@ extern "C" void dsDrawTriangle (const float pos[3], const float R[12],
 }
 
 
+extern "C" void dsDrawTriangles (const float pos[3], const float R[12],
+				const float *v, int n, int solid)
+{
+  if (current_state != 2) dsError ("drawing function called outside simulation loop");
+  setupDrawingMode();
+  glShadeModel (GL_FLAT);
+  setTransform (pos,R);
+  int i;
+  for (i = 0; i < n; ++i, v += 9)
+      drawTriangle (v, v + 3, v + 6, solid);
+  glPopMatrix();
+}
+
+
 extern "C" void dsDrawCylinder (const float pos[3], const float R[12],
 				float length, float radius)
 {
@@ -1483,10 +1506,8 @@ extern "C" void dsDrawCapsule (const float pos[3], const float R[12],
 }
 
 
-void dsDrawLine (const float pos1[3], const float pos2[3])
+static void drawLine(const float pos1[3], const float pos2[3])
 {
-  setupDrawingMode();
-  glColor3f (color[0],color[1],color[2]);
   glDisable (GL_LIGHTING);
   glLineWidth (2);
   glShadeModel (GL_FLAT);
@@ -1497,8 +1518,26 @@ void dsDrawLine (const float pos1[3], const float pos2[3])
 }
 
 
-void dsDrawBoxD (const double pos[3], const double R[12],
-		 const double sides[3])
+extern "C" void dsDrawLine (const float pos1[3], const float pos2[3])
+{
+  setupDrawingMode();
+  glColor4f(color[0], color[1], color[2], color[3]);
+  drawLine(pos1, pos2);
+
+  if (use_shadows) {
+    setShadowDrawingMode();
+    setShadowTransform();
+
+    drawLine(pos1, pos2);
+
+    glPopMatrix();
+    glDepthRange (0,1);
+  }
+}
+
+
+extern "C" void dsDrawBoxD (const double pos[3], const double R[12],
+                            const double sides[3])
 {
   int i;
   float pos2[3],R2[12],fsides[3];
@@ -1509,10 +1548,9 @@ void dsDrawBoxD (const double pos[3], const double R[12],
 }
 
 extern "C" void dsDrawConvexD (const double pos[3], const double R[12],
-			       double *_planes,unsigned int _planecount,
-			       double *_points,
-			       unsigned int _pointcount,
-			       unsigned int *_polygons)
+			       const double *_planes, unsigned int _planecount,
+			       const double *_points, unsigned int _pointcount,
+			       const unsigned int *_polygons)
 {
   if (current_state != 2) dsError ("drawing function called outside simulation loop");
   setupDrawingMode();
@@ -1554,6 +1592,24 @@ void dsDrawTriangleD (const double pos[3], const double R[12],
   glShadeModel (GL_FLAT);
   setTransform (pos2,R2);
   drawTriangleD (v0, v1, v2, solid);
+  glPopMatrix();
+}
+
+
+extern "C" void dsDrawTrianglesD (const double pos[3], const double R[12],
+				const double *v, int n, int solid)
+{
+  int i;
+  float pos2[3],R2[12];
+  for (i=0; i<3; i++) pos2[i]=(float)pos[i];
+  for (i=0; i<12; i++) R2[i]=(float)R[i];
+
+  if (current_state != 2) dsError ("drawing function called outside simulation loop");
+  setupDrawingMode();
+  glShadeModel (GL_FLAT);
+  setTransform (pos2,R2);
+  for (i = 0; i < n; ++i, v += 9)
+      drawTriangleD (v, v + 3, v + 6, solid);
   glPopMatrix();
 }
 

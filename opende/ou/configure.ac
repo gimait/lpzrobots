@@ -9,11 +9,13 @@ AC_CANONICAL_HOST
 AC_USE_SYSTEM_EXTENSIONS
 AM_INIT_AUTOMAKE(foreign)
 
+AC_LANG([C++])
+
 AC_MSG_CHECKING([target OS])
 case "$host_os" in
   cygwin* | mingw*)
     targetos=_OU_TARGET_OS_WINDOWS
-    CXXFLAGS+="-mthreads $CXXFLAGS"
+    CXXFLAGS="-mthreads $CXXFLAGS"
     AC_MSG_RESULT([win32])
     ;;
   *qnx*)
@@ -84,8 +86,6 @@ AC_C_VOLATILE
 AC_CHECK_TYPES([ptrdiff_t])
 
 # Checks for library functions.
-AC_FUNC_MALLOC
-AC_FUNC_REALLOC
 AC_CHECK_FUNCS([memset])
 
 if test $targetos = _OU_TARGET_OS_MAC
@@ -115,6 +115,16 @@ then
 fi
 CPPFLAGS="$CPPFLAGS -D_OU_NAMESPACE=$OU_NAMESPACE"
 
+AC_ARG_VAR([OU_FEATURE_SET], [feature set to be compiled within the OU])
+AC_ARG_WITH([feature-set],
+    AC_HELP_STRING([--feature-set=_OU_FEATURE_SET_BASICS|_OU_FEATURE_SET_ATOMICS|_OU_FEATURE_SET_TLS|_OU_FEATURE_SET__MAX],[sets the feature set to be enabled]),
+    [OU_FEATURE_SET=$withval])
+if test x$OU_FEATURE_SET = xno -o x$OU_FEATURE_SET = x
+then
+    OU_NAMESPACE=_OU_FEATURE_SET__MAX
+fi
+CPPFLAGS="$CPPFLAGS -D_OU_FEATURE_SET=$OU_FEATURE_SET"
+
 AC_ARG_ENABLE([asserts],
         AS_HELP_STRING([--disable-asserts],
             [disables debug error checking]),
@@ -131,4 +141,5 @@ AC_CONFIG_FILES([Makefile
 AC_OUTPUT
 
 echo "OU namespace: $OU_NAMESPACE"
+echo "OU feature set: $OU_FEATURE_SET"
 

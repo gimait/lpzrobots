@@ -23,12 +23,12 @@
 /* exercise the C interface */
 
 #include <stdio.h>
-#include <ode-dbl/ode.h>
+#include "ode/ode.h"
 #include "drawstuff/drawstuff.h"
 #include "texturepath.h"
 
 #ifdef _MSC_VER
-#pragma warning(disable:4244 4305)  // for VC++, no precision loss complaints
+#pragma warning(disable:4244 4305)  /* for VC++, no precision loss complaints */
 #endif
 
 /* select correct drawing functions */
@@ -68,6 +68,7 @@ static void nearCallback (void *data, dGeomID o1, dGeomID o2)
   /* exit without doing anything if the two bodies are connected by a joint */
   dBodyID b1,b2;
   dContact contact;
+  (void)data;
 
   b1 = dGeomGetBody(o1);
   b2 = dGeomGetBody(o2);

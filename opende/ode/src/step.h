@@ -23,13 +23,17 @@
 #ifndef _ODE_STEP_H_
 #define _ODE_STEP_H_
 
-#include <ode-dbl/common.h>
+#include <ode/common.h>
+
+struct dxStepperProcessingCallContext;
 
 
-void dInternalStepIsland (dxWorld *world,
-			  dxBody * const *body, int nb,
-			  dxJoint * const *joint, int nj,
-			  dReal stepsize);
+size_t dxEstimateStepMemoryRequirements(
+    dxBody * const *body, unsigned int nb, dxJoint * const *_joint, unsigned int _nj);
+unsigned dxEstimateStepMaxCallCount(
+    unsigned activeThreadCount, unsigned allowedThreadCount);
+
+void dxStepIsland(const dxStepperProcessingCallContext *callContext);
 
 
 

@@ -21,6 +21,8 @@
  *************************************************************************/
 
 
+#include <ode/odeconfig.h>
+#include "config.h"
 #include "hinge.h"
 #include "joint_internal.h"
 
@@ -29,7 +31,7 @@
 // hinge
 
 dxJointHinge::dxJointHinge( dxWorld *w ) :
-        dxJoint( w )
+    dxJoint( w )
 {
     dSetZero( anchor1, 4 );
     dSetZero( anchor2, 4 );
@@ -39,6 +41,13 @@ dxJointHinge::dxJointHinge( dxWorld *w ) :
     axis2[0] = 1;
     dSetZero( qrel, 4 );
     limot.init( world );
+}
+
+
+void 
+dxJointHinge::getSureMaxInfo( SureMaxInfo* info )
+{
+    info->max_m = 6;
 }
 
 
@@ -54,22 +63,24 @@ dxJointHinge::getInfo1( dxJoint::Info1 *info )
 
     // see if we're at a joint limit.
     if (( limot.lostop >= -M_PI || limot.histop <= M_PI ) &&
-            limot.lostop <= limot.histop )
+        limot.lostop <= limot.histop )
     {
         dReal angle = getHingeAngle( node[0].body,
-                                     node[1].body,
-                                     axis1, qrel );
+            node[1].body,
+            axis1, qrel );
         if ( limot.testRotationalLimit( angle ) )
             info->m = 6;
     }
 }
 
 
-void
-dxJointHinge::getInfo2( dxJoint::Info2 *info )
+void dxJointHinge::getInfo2( dReal worldFPS, dReal worldERP, 
+    int rowskip, dReal *J1, dReal *J2,
+    int pairskip, dReal *pairRhsCfm, dReal *pairLoHi, 
+    int *findex )
 {
     // set the three ball-and-socket rows
-    setBall( this, info, anchor1, anchor2 );
+    setBall( this, worldFPS, worldERP, rowskip, J1, J2, pairskip, pairRhsCfm, anchor1, anchor2 );
 
     // set the two hinge rows. the hinge axis should be the only unconstrained
     // rotational axis, the angular velocity of the two bodies perpendicular to
@@ -81,27 +92,21 @@ dxJointHinge::getInfo2( dxJoint::Info2 *info )
 
     dVector3 ax1;  // length 1 joint axis in global coordinates, from 1st body
     dVector3 p, q; // plane space vectors for ax1
-    dMULTIPLY0_331( ax1, node[0].body->posr.R, axis1 );
+    dMultiply0_331( ax1, node[0].body->posr.R, axis1 );
     dPlaneSpace( ax1, p, q );
 
-    int s3 = 3 * info->rowskip;
-    int s4 = 4 * info->rowskip;
+    dxBody *body1 = node[1].body;
+    
+    int currRowSkip = 3 * rowskip;
+    dCopyVector3(J1 + currRowSkip + GI2__JA_MIN, p);
+    if ( body1 ) {
+        dCopyNegatedVector3(J2 + currRowSkip + GI2__JA_MIN, p);
+    }
 
-    info->J1a[s3+0] = p[0];
-    info->J1a[s3+1] = p[1];
-    info->J1a[s3+2] = p[2];
-    info->J1a[s4+0] = q[0];
-    info->J1a[s4+1] = q[1];
-    info->J1a[s4+2] = q[2];
-
-    if ( node[1].body )
-    {
-        info->J2a[s3+0] = -p[0];
-        info->J2a[s3+1] = -p[1];
-        info->J2a[s3+2] = -p[2];
-        info->J2a[s4+0] = -q[0];
-        info->J2a[s4+1] = -q[1];
-        info->J2a[s4+2] = -q[2];
+    currRowSkip += rowskip;
+    dCopyVector3(J1 + currRowSkip + GI2__JA_MIN, q);
+    if ( body1 ) {
+        dCopyNegatedVector3(J2 + currRowSkip + GI2__JA_MIN, q);
     }
 
     // compute the right hand side of the constraint equation. set relative
@@ -120,24 +125,25 @@ dxJointHinge::getInfo2( dxJoint::Info2 *info )
     // ax1 x ax2 is in the plane space of ax1, so we project the angular
     // velocity to p and q to find the right hand side.
 
-    dVector3 ax2, b;
-    if ( node[1].body )
-    {
-        dMULTIPLY0_331( ax2, node[1].body->posr.R, axis2 );
+    dVector3 b;
+    if ( body1 ) {
+        dVector3 ax2;
+        dMultiply0_331( ax2, body1->posr.R, axis2 );
+        dCalcVectorCross3( b, ax1, ax2 );
+    } else {
+        dCalcVectorCross3( b, ax1, axis2 );
     }
-    else
-    {
-        ax2[0] = axis2[0];
-        ax2[1] = axis2[1];
-        ax2[2] = axis2[2];
-    }
-    dCROSS( b, = , ax1, ax2 );
-    dReal k = info->fps * info->erp;
-    info->c[3] = k * dDOT( b, p );
-    info->c[4] = k * dDOT( b, q );
+
+    dReal k = worldFPS * worldERP;
+    int currPairSkip = 3 * pairskip;
+    pairRhsCfm[currPairSkip + GI2_RHS] = k * dCalcVectorDot3( b, p );
+    currPairSkip += pairskip;
+    pairRhsCfm[currPairSkip + GI2_RHS] = k * dCalcVectorDot3( b, q );
 
     // if the hinge is powered, or has joint limits, add in the stuff
-    limot.addLimot( this, info, 5, ax1, 1 );
+    currRowSkip += rowskip;
+    currPairSkip += pairskip;
+    limot.addLimot( this, worldFPS, J1 + currRowSkip, J2 + currRowSkip, pairRhsCfm + currPairSkip, pairLoHi + currPairSkip, ax1, 1 );
 }
 
 
@@ -165,7 +171,7 @@ void dJointSetHingeAnchorDelta( dJointID j, dReal x, dReal y, dReal z, dReal dx,
         q[1] = y - joint->node[0].body->posr.pos[1];
         q[2] = z - joint->node[0].body->posr.pos[2];
         q[3] = 0;
-        dMULTIPLY1_331( joint->anchor1, joint->node[0].body->posr.R, q );
+        dMultiply1_331( joint->anchor1, joint->node[0].body->posr.R, q );
 
         if ( joint->node[1].body )
         {
@@ -173,7 +179,7 @@ void dJointSetHingeAnchorDelta( dJointID j, dReal x, dReal y, dReal z, dReal dx,
             q[1] = y - joint->node[1].body->posr.pos[1];
             q[2] = z - joint->node[1].body->posr.pos[2];
             q[3] = 0;
-            dMULTIPLY1_331( joint->anchor2, joint->node[1].body->posr.R, q );
+            dMultiply1_331( joint->anchor2, joint->node[1].body->posr.R, q );
         }
         else
         {
@@ -285,9 +291,9 @@ dReal dJointGetHingeAngle( dJointID j )
     if ( joint->node[0].body )
     {
         dReal ang = getHingeAngle( joint->node[0].body,
-                                   joint->node[1].body,
-                                   joint->axis1,
-                                   joint->qrel );
+            joint->node[1].body,
+            joint->axis1,
+            joint->qrel );
         if ( joint->flags & dJOINT_REVERSE )
             return -ang;
         else
@@ -305,9 +311,9 @@ dReal dJointGetHingeAngleRate( dJointID j )
     if ( joint->node[0].body )
     {
         dVector3 axis;
-        dMULTIPLY0_331( axis, joint->node[0].body->posr.R, joint->axis1 );
-        dReal rate = dDOT( axis, joint->node[0].body->avel );
-        if ( joint->node[1].body ) rate -= dDOT( axis, joint->node[1].body->avel );
+        dMultiply0_331( axis, joint->node[0].body->posr.R, joint->axis1 );
+        dReal rate = dCalcVectorDot3( axis, joint->node[0].body->avel );
+        if ( joint->node[1].body ) rate -= dCalcVectorDot3( axis, joint->node[1].body->avel );
         if ( joint->flags & dJOINT_REVERSE ) rate = - rate;
         return rate;
     }

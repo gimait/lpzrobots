@@ -23,7 +23,8 @@
 // This is a demo of the QuickStep and StepFast methods,
 // originally by David Whittaker.
 
-#include <ode-dbl/ode.h>
+
+#include <ode/ode.h>
 #include <drawstuff/drawstuff.h>
 #include "texturepath.h"
 
@@ -40,10 +41,6 @@
 #define dsDrawCapsule dsDrawCapsuleD
 #endif
 
-
-// select the method you want to test here (only uncomment *one* line)
-#define QUICKSTEP 1
-//#define STEPFAST 1
 
 // some constants
 
@@ -71,6 +68,8 @@
 #define CANNON_BALL_MASS 10	// mass of the cannon ball
 #define CANNON_BALL_RADIUS 0.5
 
+static const dVector3 xunit = { 1, 0, 0 }, yunit = { 0, 1, 0 }, zpunit = { 0, 0, 1 }, zmunit = { 0, 0, -1 };
+
 //#define BOX
 #define CARS
 #define WALL
@@ -84,6 +83,8 @@
 
 static dWorldID world;
 static dSpaceID space;
+static dThreadingImplementationID threading;
+static dThreadingThreadPoolID pool;
 static dBodyID body[10000];
 static int bodies;
 static dJointID joint[100000];
@@ -115,7 +116,7 @@ static dReal cannon_angle=0,cannon_elevation=-1.2;
 // this is called by dSpaceCollide when two objects in space are
 // potentially colliding.
 
-static void nearCallback (void *data, dGeomID o1, dGeomID o2)
+static void nearCallback (void *, dGeomID o1, dGeomID o2)
 {
 	int i,n;
 	
@@ -165,8 +166,6 @@ static void start()
 			"\t'2' to lower the cannon.\n"
 			"\t'x' to shoot from the cannon.\n"
 			"\t'f' to toggle fast step mode.\n"
-			"\t'+' to increase AutoEnableDepth.\n"
-			"\t'-' to decrease AutoEnableDepth.\n"
 			"\t'r' to reset simulation.\n");
 }
 
@@ -208,8 +207,7 @@ void makeCar(dReal x, dReal y, int &bodyI, int &jointI, int &boxI, int &sphereI)
 		dJointAttach (joint[jointI+i],body[bodyI],body[bodyI+i+1]);
 		const dReal *a = dBodyGetPosition (body[bodyI+i+1]);
 		dJointSetHinge2Anchor (joint[jointI+i],a[0],a[1],a[2]);
-		dJointSetHinge2Axis1 (joint[jointI+i],0,0,(i<2 ? 1 : -1));
-		dJointSetHinge2Axis2 (joint[jointI+i],0,1,0);
+		dJointSetHinge2Axes (joint[jointI+i], (i<2 ? zpunit : zmunit), yunit);
 		dJointSetHinge2Param (joint[jointI+i],dParamSuspensionERP,0.8);
 		dJointSetHinge2Param (joint[jointI+i],dParamSuspensionCFM,1e-5);
 		dJointSetHinge2Param (joint[jointI+i],dParamVel2,0);
@@ -234,19 +232,29 @@ void makeCar(dReal x, dReal y, int &bodyI, int &jointI, int &boxI, int &sphereI)
 	sphereI	+= 4;
 }
 
+static 
+void shutdownSimulation()
+{
+    // destroy world if it exists
+    if (bodies)
+    {
+        dThreadingImplementationShutdownProcessing(threading);
+        dThreadingFreeThreadPool(pool);
+        dWorldSetStepThreadingImplementation(world, NULL, NULL);
+        dThreadingFreeImplementation(threading);
 
-void resetSimulation()
+        dJointGroupDestroy (contactgroup);
+        dSpaceDestroy (space);
+        dWorldDestroy (world);
+
+        bodies = 0;
+    }
+}
+
+static 
+void setupSimulation()
 {
 	int i;
-	i = 0;
-	// destroy world if it exists
-	if (bodies)
-	{
-		dJointGroupDestroy (contactgroup);
-		dSpaceDestroy (space);
-		dWorldDestroy (world);
-	}
-	
 	for (i = 0; i < 1000; i++)
 		wb_stepsdis[i] = 0;
 
@@ -263,6 +271,14 @@ void resetSimulation()
 	dWorldSetCFM (world, 1e-5);
 	dWorldSetERP (world, 0.8);
 	dWorldSetQuickStepNumIterations (world,ITERS);
+
+    threading = dThreadingAllocateMultiThreadedImplementation();
+    pool = dThreadingAllocateThreadPool(4, 0, dAllocateFlagBasicData, NULL);
+    dThreadingThreadPoolServeMultiThreadedImplementation(pool, threading);
+    // dWorldSetStepIslandsProcessingMaxThreadCount(world, 1);
+    dWorldSetStepThreadingImplementation(world, dThreadingImplementationGetFunctions(threading), threading);
+
+
 	ground = dCreatePlane (space,0,0,1,0);
 	
 	bodies = 0;
@@ -362,8 +378,7 @@ void resetSimulation()
 				dJointAttach (joint[joints],body[bodies-2],body[bodies]);
 			const dReal *a = dBodyGetPosition (body[bodies++]);
 			dJointSetHinge2Anchor (joint[joints],a[0],a[1],a[2]);
-			dJointSetHinge2Axis1 (joint[joints],0,0,1);
-			dJointSetHinge2Axis2 (joint[joints],1,0,0);
+			dJointSetHinge2Axes (joint[joints], zpunit, xunit);
 			dJointSetHinge2Param (joint[joints],dParamSuspensionERP,1.0);
 			dJointSetHinge2Param (joint[joints],dParamSuspensionCFM,1e-5);
 			dJointSetHinge2Param (joint[joints],dParamLoStop,0);
@@ -386,8 +401,7 @@ void resetSimulation()
 				dJointAttach (joint[joints],body[bodies-2],body[bodies]);
 			const dReal *b = dBodyGetPosition (body[bodies++]);
 			dJointSetHinge2Anchor (joint[joints],b[0],b[1],b[2]);
-			dJointSetHinge2Axis1 (joint[joints],0,0,1);
-			dJointSetHinge2Axis2 (joint[joints],1,0,0);
+			dJointSetHinge2Axes (joint[joints], zpunit, xunit);
 			dJointSetHinge2Param (joint[joints],dParamSuspensionERP,1.0);
 			dJointSetHinge2Param (joint[joints],dParamSuspensionCFM,1e-5);
 			dJointSetHinge2Param (joint[joints],dParamLoStop,0);
@@ -451,14 +465,9 @@ static void command (int cmd)
 	case 'f': case 'F':
 		doFast = !doFast;
 		break;
-	case '+':
-		dWorldSetAutoEnableDepthSF1 (world, dWorldGetAutoEnableDepthSF1 (world) + 1);
-		break;
-	case '-':
-		dWorldSetAutoEnableDepthSF1 (world, dWorldGetAutoEnableDepthSF1 (world) - 1);
-		break;
 	case 'r': case 'R':
-		resetSimulation();
+        shutdownSimulation();
+		setupSimulation();
 		break;
 	case '[':
 		cannon_angle += 0.1;
@@ -515,11 +524,7 @@ static void simLoop (int pause)
 		if (doFast)
 		{
 			dSpaceCollide (space,0,&nearCallback);
-#if defined(QUICKSTEP)
 			dWorldQuickStep (world,0.05);
-#elif defined(STEPFAST)
-			dWorldStepFast1 (world,0.05,ITERS);
-#endif
 			dJointGroupEmpty (contactgroup);
 		}
 		else
@@ -625,14 +630,23 @@ int main (int argc, char **argv)
 	boxes = 0;
 	spheres = 0;
 	
-	resetSimulation();
+	setupSimulation();
 	
+	dThreadingImplementationID threading = dThreadingAllocateMultiThreadedImplementation();
+	dThreadingThreadPoolID pool = dThreadingAllocateThreadPool(8, 0, dAllocateFlagBasicData, NULL);
+	dThreadingThreadPoolServeMultiThreadedImplementation(pool, threading);
+	// dWorldSetStepIslandsProcessingMaxThreadCount(world, 1);
+	dWorldSetStepThreadingImplementation(world, dThreadingImplementationGetFunctions(threading), threading);
+
 	// run simulation
 	dsSimulationLoop (argc,argv,352,288,&fn);
 	
-	dJointGroupDestroy (contactgroup);
-	dSpaceDestroy (space);
-	dWorldDestroy (world);
+	dThreadingImplementationShutdownProcessing(threading);
+	dThreadingFreeThreadPool(pool);
+	dWorldSetStepThreadingImplementation(world, NULL, NULL);
+	dThreadingFreeImplementation(threading);
+
+	shutdownSimulation();
 	dCloseODE();
 	return 0;
 }

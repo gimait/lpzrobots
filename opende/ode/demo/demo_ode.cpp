@@ -21,7 +21,7 @@
  *************************************************************************/
 
 #include <setjmp.h>
-#include <ode-dbl/ode.h>
+#include <ode/ode.h>
 
 #ifdef _MSC_VER
 #pragma warning(disable:4244 4305)  // for VC++, no precision loss complaints
@@ -155,10 +155,10 @@ void testCrossProduct()
   dMakeRandomVector (b,3,1.0);
   dMakeRandomVector (c,3,1.0);
 
-  dCROSS (a1,=,b,c);
+  dCalcVectorCross3(a1,b,c);
 
   dSetZero (B,12);
-  dCROSSMAT (B,b,4,+,-);
+  dSetCrossMatrixPlus(B,b,4);
   dMultiply0 (a2,B,c,3,3,1);
 
   dReal diff = dMaxDifference(a1,a2,3,1);
@@ -189,11 +189,11 @@ void testNormalize3()
     dMakeRandomVector (n1,3,1.0);
     for (j=0; j<3; j++) n2[j]=n1[j];
     dNormalize3 (n2);
-    if (dFabs(dDOT(n2,n2) - 1.0) > tol) bad |= 1;
+    if (dFabs(dCalcVectorDot3(n2,n2) - 1.0) > tol) bad |= 1;
     if (dFabs(n2[0]/n1[0] - n2[1]/n1[1]) > tol) bad |= 2;
     if (dFabs(n2[0]/n1[0] - n2[2]/n1[2]) > tol) bad |= 4;
     if (dFabs(n2[1]/n1[1] - n2[2]/n1[2]) > tol) bad |= 8;
-    if (dFabs(dDOT(n2,n1) - dSqrt(dDOT(n1,n1))) > tol) bad |= 16;
+    if (dFabs(dCalcVectorDot3(n2,n1) - dSqrt(dCalcVectorDot3(n1,n1))) > tol) bad |= 16;
     if (bad) {
       printf ("\tFAILED (code=%x)\n",bad);
       return;
@@ -225,11 +225,11 @@ void testPlaneSpace()
     dMakeRandomVector (n,3,1.0);
     dNormalize3 (n);
     dPlaneSpace (n,p,q);
-    if (fabs(dDOT(n,p)) > tol) bad = 1;
-    if (fabs(dDOT(n,q)) > tol) bad = 1;
-    if (fabs(dDOT(p,q)) > tol) bad = 1;
-    if (fabs(dDOT(p,p)-1) > tol) bad = 1;
-    if (fabs(dDOT(q,q)-1) > tol) bad = 1;
+    if (fabs(dCalcVectorDot3(n,p)) > tol) bad = 1;
+    if (fabs(dCalcVectorDot3(n,q)) > tol) bad = 1;
+    if (fabs(dCalcVectorDot3(p,q)) > tol) bad = 1;
+    if (fabs(dCalcVectorDot3(p,p)-1) > tol) bad = 1;
+    if (fabs(dCalcVectorDot3(q,q)-1) > tol) bad = 1;
   }
   printf ("\t%s\n", bad ? "FAILED" : "passed");
 }
@@ -285,38 +285,38 @@ void testSmallMatrixMultiply()
   dMakeRandomMatrix (C,3,3,1.0);
   dMakeRandomMatrix (x,3,1,1.0);
 
-  // dMULTIPLY0_331()
-  dMULTIPLY0_331 (a,B,x);
+  // dMultiply0_331()
+  dMultiply0_331 (a,B,x);
   dMultiply0 (a2,B,x,3,3,1);
   printf ("\t%s (1)\n",(dMaxDifference (a,a2,3,1) > tol) ? "FAILED" :
 	  "passed");
 
-  // dMULTIPLY1_331()
-  dMULTIPLY1_331 (a,B,x);
+  // dMultiply1_331()
+  dMultiply1_331 (a,B,x);
   dMultiply1 (a2,B,x,3,3,1);
   printf ("\t%s (2)\n",(dMaxDifference (a,a2,3,1) > tol) ? "FAILED" :
 	  "passed");
 
-  // dMULTIPLY0_133
-  dMULTIPLY0_133 (a,x,B);
+  // dMultiply0_133
+  dMultiply0_133 (a,x,B);
   dMultiply0 (a2,x,B,1,3,3);
   printf ("\t%s (3)\n",(dMaxDifference (a,a2,1,3) > tol) ? "FAILED" :
 	  "passed");
 
-  // dMULTIPLY0_333()
-  dMULTIPLY0_333 (A,B,C);
+  // dMultiply0_333()
+  dMultiply0_333 (A,B,C);
   dMultiply0 (A2,B,C,3,3,3);
   printf ("\t%s (4)\n",(dMaxDifference (A,A2,3,3) > tol) ? "FAILED" :
 	  "passed");
 
-  // dMULTIPLY1_333()
-  dMULTIPLY1_333 (A,B,C);
+  // dMultiply1_333()
+  dMultiply1_333 (A,B,C);
   dMultiply1 (A2,B,C,3,3,3);
   printf ("\t%s (5)\n",(dMaxDifference (A,A2,3,3) > tol) ? "FAILED" :
 	  "passed");
 
-  // dMULTIPLY2_333()
-  dMULTIPLY2_333 (A,B,C);
+  // dMultiply2_333()
+  dMultiply2_333 (A,B,C);
   dMultiply2 (A2,B,C,3,3,3);
   printf ("\t%s (6)\n",(dMaxDifference (A,A2,3,3) > tol) ? "FAILED" :
 	  "passed");
@@ -733,12 +733,12 @@ void makeRandomRotation (dMatrix3 R)
   dMakeRandomVector (u1,3,1.0);
   dNormalize3 (u1);
   dMakeRandomVector (u2,3,1.0);
-  dReal d = dDOT(u1,u2);
+  dReal d = dCalcVectorDot3(u1,u2);
   u2[0] -= d*u1[0];
   u2[1] -= d*u1[1];
   u2[2] -= d*u1[2];
-  dNormalize3 (u2);
-  dCROSS (u3,=,u1,u2);
+  dNormalize3(u2);
+  dCalcVectorCross3(u3,u1,u2);
 }
 
 
@@ -846,14 +846,46 @@ void testRotationFunctions()
 
 //****************************************************************************
 
-#include "../src/array.h"
-#include "../src/array.cpp"
+#include <assert.h>
+
+template<class T>
+class simplevector
+{
+private:
+  int n;
+  int max;
+  T* data;
+
+public:
+  simplevector() { initialize(); }
+  ~simplevector() { finalize(); }
+  T& operator[](int i) { assert(i>=0 && i<n); return data[i]; }
+  const T& operator[](int i) const { assert(i>=0 && i<n); return data[i]; }
+  void push_back(const T& elem)
+  {
+    if (n == max)
+    {
+      max *= 2;
+      T* newdata = new T[max];
+      memcpy(newdata, data, sizeof(T)*n);
+      delete[] data;
+      data = newdata;
+    }
+    data[n++] = elem;
+  }
+  int size() const { return n; }
+  void clear() { finalize(); initialize(); }
+
+private:
+  void finalize() { delete[] data; }
+  void initialize() { data = new T[32]; max = 32; n = 0; }
+};
 
 // matrix header on the stack
 
 class dMatrixComparison {
   struct dMatInfo;
-  dArray<dMatInfo*> mat;
+  simplevector<dMatInfo*> mat;
   int afterfirst,index;
 
 public:
@@ -919,9 +951,10 @@ dReal dMatrixComparison::nextMatrix (dReal *A, int n, int m, int lower_tri,
     va_list ap;
     va_start (ap,name);
     vsprintf (mi->name,name,ap);
+    va_end (ap);
     if (strlen(mi->name) >= sizeof (mi->name)) dDebug (0,"name too long");
 
-    mat.push (mi);
+    mat.push_back(mi);
     return 0;
   }
   else {
@@ -935,6 +968,7 @@ dReal dMatrixComparison::nextMatrix (dReal *A, int n, int m, int lower_tri,
     va_list ap;
     va_start (ap,name);
     vsprintf (mi.name,name,ap);
+    va_end (ap);
     if (strlen(mi.name) >= sizeof (mi.name)) dDebug (0,"name too long");
 
     if (strcmp(mp->name,mi.name) != 0)
@@ -973,7 +1007,7 @@ void dMatrixComparison::reset()
     dFree (mat[i]->data,mat[i]->size);
     dFree (mat[i],sizeof(dMatInfo));
   }
-  mat.setSize (0);
+  mat.clear();
   afterfirst = 0;
   index = 0;
 }
@@ -992,7 +1026,7 @@ void dMatrixComparison::dump()
 
 // static jmp_buf jump_buffer;
 
-static void myDebug (int num, const char *msg, va_list ap)
+static void myDebug (int /*num*/, const char */*msg*/, va_list /*ap*/)
 {
   // printf ("(Error %d: ",num);
   // vprintf (msg,ap);
@@ -1093,7 +1127,7 @@ extern "C" void dTestMatrixComparison()
 // internal unit tests
 extern "C" void dTestDataStructures();
 extern "C" void dTestMatrixComparison();
-extern "C" void dTestSolveLCP();
+extern "C" int dTestSolveLCP();
 
 
 int main()

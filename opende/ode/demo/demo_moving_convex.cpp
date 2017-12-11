@@ -20,7 +20,7 @@
  *                                                                       *
  *************************************************************************/
 
-#include <ode-dbl/ode.h>
+#include <ode/ode.h>
 #include <drawstuff/drawstuff.h>
 #include "texturepath.h"
 #include "bunny_geom.h"
@@ -75,7 +75,7 @@ typedef dReal dVector3R[3];
 // this is called by dSpaceCollide when two objects in space are
 // potentially colliding.
 
-static void nearCallback( void *data, dGeomID o1, dGeomID o2 )
+static void nearCallback( void *, dGeomID o1, dGeomID o2 )
 {
 	int i;
 	// if (o1->body && o2->body) return;
@@ -144,12 +144,12 @@ char locase( char c )
 // called when a key pressed
 static void command( int cmd )
 {
-	int i,j,k;
+	int i,k;
 	dReal sides[3];
 	dMass m;
 
 	cmd = locase( cmd );
-	if ( cmd == 'v' || cmd == 'b' || cmd == 'c' || cmd == 's' )
+	if ( cmd == 'v' || cmd == 'b' || cmd == 'c' || cmd == 's' || cmd == 'y')
 	{
 		if ( num < NUM )
 		{
@@ -207,6 +207,10 @@ static void command( int cmd )
 			dMassSetCapsule( &m,DENSITY,3,sides[0],sides[1] );
 			obj[i].geom[0] = dCreateCapsule( space,sides[0],sides[1] );
 		}
+        else if (cmd == 'y') {
+            dMassSetCylinder (&m,DENSITY,3,sides[0],sides[1]);
+            obj[i].geom[0] = dCreateCylinder (space,sides[0],sides[1]);
+        }
 		else if ( cmd == 's' )
 		{
 			sides[0] *= 0.5;
@@ -226,6 +230,7 @@ static void command( int cmd )
 			dTriMeshDataID new_tmdata = dGeomTriMeshDataCreate();
 			dGeomTriMeshDataBuildSingle( new_tmdata, &Vertices[0], 3 * sizeof( float ), VertexCount,
 			                             ( dTriIndex* )&Indices[0], IndexCount, 3 * sizeof( dTriIndex ) );
+            dGeomTriMeshDataPreprocess2( new_tmdata, (1U << dTRIDATAPREPROCESS_BUILD_FACE_ANGLES), NULL );
 
 			dGeomID triMesh = dCreateTriMesh( 0, new_tmdata, 0, 0, 0 );
 
@@ -293,6 +298,11 @@ void drawGeom( dGeomID g, const dReal *pos, const dReal *R, int show_aabb )
 	{
 		dsDrawSphere( pos,R,dGeomSphereGetRadius( g ) );
 	}
+    else if (type == dCylinderClass) {
+        dReal radius,length;
+        dGeomCylinderGetParams (g,&radius,&length);
+        dsDrawCylinder (pos,R,length,radius);
+    }
 	else if ( type == dCapsuleClass )
 	{
 		dReal radius,length;
@@ -332,7 +342,7 @@ static void simLoop( int pause )
 	dsSetColor( 0,0,2 );
 	dSpaceCollide( space,0,&nearCallback );
 
-	if ( !pause ) dWorldStepFast1( world,0.05, 5 );
+	if ( !pause ) dWorldQuickStep( world,0.05 );
 
 	for ( int j = 0; j < dSpaceGetNumGeoms( space ); j++ )
 	{

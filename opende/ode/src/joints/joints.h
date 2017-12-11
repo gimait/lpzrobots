@@ -23,11 +23,14 @@
 #ifndef _ODE_JOINTS_H_
 #define _ODE_JOINTS_H_
 
-#include <ode-dbl/common.h>
+#include <ode/common.h>
 
 #include "joint.h"
 
 #include "ball.h"
+#include "dball.h"
+#include "dhinge.h"
+#include "transmission.h"
 #include "hinge.h"
 #include "slider.h"
 #include "contact.h"

@@ -1,8 +1,30 @@
+/*************************************************************************
+ *                                                                       *
+ * Open Dynamics Engine, Copyright (C) 2001,2002 Russell L. Smith.       *
+ * All rights reserved.  Email: russ@q12.org   Web: www.q12.org          *
+ *                                                                       *
+ * This library is free software; you can redistribute it and/or         *
+ * modify it under the terms of EITHER:                                  *
+ *   (1) The GNU Lesser General Public License as published by the Free  *
+ *       Software Foundation; either version 2.1 of the License, or (at  *
+ *       your option) any later version. The text of the GNU Lesser      *
+ *       General Public License is included with this library in the     *
+ *       file LICENSE.TXT.                                               *
+ *   (2) The BSD-style license that is included with this library in     *
+ *       the file LICENSE-BSD.TXT.                                       *
+ *                                                                       *
+ * This library is distributed in the hope that it will be useful,       *
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of        *
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the files    *
+ * LICENSE.TXT and LICENSE-BSD.TXT for more details.                     *
+ *                                                                       *
+ *************************************************************************/
+
 /*
   This demo shows how to use dContactMotionN in a lifting platform.
 */
 //#include <unistd.h> // for usleep()
-#include <ode-dbl/ode.h>
+#include <ode/ode.h>
 #include <drawstuff/drawstuff.h>
 #include "texturepath.h"
 
@@ -113,9 +135,9 @@ static void contactplat_2(dContact &contact)
       geom's velocity against the contact normal and fdir1, fdir2
       (obtained with dPlaneSpace()). Assuming moving geom=g2
       (so the contact joint is in the moving geom's reference frame):
-      motion1 = dDOT(fdir1, vel);
-      motion2 = dDOT(fdir2, vel);
-      motionN = dDOT(normal, vel);
+      motion1 = dCalcVectorDot3(fdir1, vel);
+      motion2 = dCalcVectorDot3(fdir2, vel);
+      motionN = dCalcVectorDot3(normal, vel);
 
       For geom=g1 just negate motionN and motion2. fdir1 is an arbitrary
       vector, so there's no need to negate motion1.
@@ -138,9 +160,9 @@ static void contactplat_2(dContact &contact)
     if (contact.geom.g1 == platform)
         inv = -1;
     
-    contact.surface.motion1 = dDOT(mov2_vel, motiondir1);
-    contact.surface.motion2 = inv * dDOT(mov2_vel, motiondir2);
-    contact.surface.motionN = inv * dDOT(mov2_vel, contact.geom.normal);
+    contact.surface.motion1 = dCalcVectorDot3(mov2_vel, motiondir1);
+    contact.surface.motion2 = inv * dCalcVectorDot3(mov2_vel, motiondir2);
+    contact.surface.motionN = inv * dCalcVectorDot3(mov2_vel, contact.geom.normal);
 
 }
 
@@ -148,7 +170,7 @@ static void contactplat_2(dContact &contact)
 
 
 
-static void nearCallback (void *data, dGeomID o1, dGeomID o2)
+static void nearCallback (void *, dGeomID o1, dGeomID o2)
 {
     dMatrix3 RI;
     static const dReal ss[3] = {0.02,0.02,0.02};
@@ -241,9 +263,13 @@ static void command (int cmd)
                 if (nextobj >= num) nextobj = 0;
 
                 // destroy the body and geoms for slot i
-                dBodyDestroy (obj[i].body);
+                if (obj[i].body) {
+                  dBodyDestroy (obj[i].body);
+                }
                 for (k=0; k < GPB; k++) {
-                    if (obj[i].geom[k]) dGeomDestroy (obj[i].geom[k]);
+                    if (obj[i].geom[k]) {
+                      dGeomDestroy (obj[i].geom[k]);
+                    }
                 }
                 memset (&obj[i],0,sizeof(obj[i]));
             }
@@ -293,7 +319,9 @@ static void command (int cmd)
 
             if (!setBody)
                 for (k=0; k < GPB; k++) {
-                    if (obj[i].geom[k]) dGeomSetBody (obj[i].geom[k],obj[i].body);
+                    if (obj[i].geom[k]) {
+                      dGeomSetBody (obj[i].geom[k],obj[i].body);
+                    }
                 }
 
             dBodySetMass (obj[i].body,&m);
@@ -349,19 +377,7 @@ void drawGeom (dGeomID g, const dReal *pos, const dReal *R, int show_aabb)
         dGeomCylinderGetParams (g,&radius,&length);
         dsDrawCylinder (pos,R,length,radius);
     }
-    else if (type == dGeomTransformClass) {
-        dGeomID g2 = dGeomTransformGetGeom (g);
-        const dReal *pos2 = dGeomGetPosition (g2);
-        const dReal *R2 = dGeomGetRotation (g2);
-        dVector3 actual_pos;
-        dMatrix3 actual_R;
-        dMULTIPLY0_331 (actual_pos,R,pos2);
-        actual_pos[0] += pos[0];
-        actual_pos[1] += pos[1];
-        actual_pos[2] += pos[2];
-        dMULTIPLY0_333 (actual_R,R,R2);
-        drawGeom (g2,actual_pos,actual_R,0);
-    }
+
     if (show_body) {
         dBodyID body = dGeomGetBody(g);
         if (body) {
@@ -462,9 +478,17 @@ int main (int argc, char **argv)
     // create world
     dInitODE();
     world = dWorldCreate();
-    //space = dHashSpaceCreate (0);
+
+#if 1
+    space = dHashSpaceCreate (0);
+#elif 0
     dVector3 center = {0,0,0}, extents = { 100, 100, 100};
     space = dQuadTreeSpaceCreate(0, center, extents, 5);
+#elif 0
+    space = dSweepAndPruneSpaceCreate (0, dSAP_AXES_XYZ);
+#else
+    space = dSimpleSpaceCreate(0);
+#endif
 
     contactgroup = dJointGroupCreate (0);
     dWorldSetGravity (world,0,0,-0.5);
@@ -476,6 +500,7 @@ int main (int argc, char **argv)
 
     dWorldSetContactSurfaceLayer (world,0.001);
     ground = dCreatePlane (space,0,0,1,0);
+    
     memset (obj,0,sizeof(obj));
 
     // create lift platform

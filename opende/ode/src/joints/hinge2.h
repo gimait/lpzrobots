@@ -36,22 +36,30 @@ struct dxJointHinge2 : public dxJoint
     dVector3 axis2;     // axis 2 w.r.t second body
     dReal c0, s0;       // cos,sin of desired angle between axis 1,2
     dVector3 v1, v2;    // angle ref vectors embedded in first body
+    dVector3 w1, w2;    // angle ref vectors embedded in second body
     dxJointLimitMotor limot1; // limit+motor info for axis 1
     dxJointLimitMotor limot2; // limit+motor info for axis 2
     dReal susp_erp, susp_cfm; // suspension parameters (erp,cfm)
 
 
-    dReal measureAngle() const;
+    dReal measureAngle1() const;
+    dReal measureAngle2() const;
     void makeV1andV2();
+    void makeW1andW2();
+
     void getAxisInfo(dVector3 ax1, dVector3 ax2, dVector3 axis,
-                     dReal &sin_angle, dReal &cos_Angle) const;
+        dReal &sin_angle, dReal &cos_Angle) const;
 
 
 
     dxJointHinge2( dxWorld *w );
 
+    virtual void getSureMaxInfo( SureMaxInfo* info );
     virtual void getInfo1( Info1* info );
-    virtual void getInfo2( Info2* info );
+    virtual void getInfo2( dReal worldFPS, dReal worldERP, 
+        int rowskip, dReal *J1, dReal *J2,
+        int pairskip, dReal *pairRhsCfm, dReal *pairLoHi, 
+        int *findex );
     virtual dJointType type() const;
     virtual size_t size() const;
 

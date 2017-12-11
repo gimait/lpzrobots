@@ -45,7 +45,7 @@ you must verify visually.
 */
 
 #include <ctype.h>
-#include <ode-dbl/ode.h>
+#include <ode/ode.h>
 #include <drawstuff/drawstuff.h>
 #include "texturepath.h"
 
@@ -64,6 +64,8 @@ you must verify visually.
 #define SIDE (0.5f)	// side length of a box - don't change this
 #define MASS (1.0)	// mass of a box
 #define STEPSIZE 0.05
+
+static const dVector3 xunit = { 1, 0, 0 }, zunit = { 0, 0, 1 };
 
 
 // dynamics objects
@@ -386,8 +388,7 @@ int setupTest (int n)
     joint = dJointCreateHinge2 (world,0);
     dJointAttach (joint,body[0],body[1]);
     dJointSetHinge2Anchor (joint,-0.5*SIDE,0,1);
-    dJointSetHinge2Axis1 (joint,0,0,1);
-    dJointSetHinge2Axis2 (joint,1,0,0);
+    dJointSetHinge2Axes (joint, zunit, xunit);
     max_iterations = 50;
     return 1;
 
@@ -400,8 +401,7 @@ int setupTest (int n)
     joint = dJointCreateHinge2 (world,0);
     dJointAttach (joint,body[0],body[1]);
     dJointSetHinge2Anchor (joint,-0.5*SIDE,0,1);
-    dJointSetHinge2Axis1 (joint,0,0,1);
-    dJointSetHinge2Axis2 (joint,1,0,0);
+    dJointSetHinge2Axes (joint, zunit, xunit);
     dJointSetHinge2Param (joint,dParamFMax,1);
     dJointSetHinge2Param (joint,dParamFMax2,1);
     if (n==431) {
@@ -526,7 +526,7 @@ dReal doStuffAndGetError (int n)
     const dReal *p1 = dBodyGetPosition (body[0]);
     const dReal *p2 = dBodyGetPosition (body[1]);
     for (int i=0; i<3; i++) p[i] = p2[i] - p1[i];
-    dMULTIPLY1_331 (pp,R1,p);
+    dMultiply1_331 (pp,R1,p);
     pp[0] += 0.5;
     pp[1] += 0.5;
     return (err1 + length (pp)) * 300;
@@ -558,7 +558,7 @@ dReal doStuffAndGetError (int n)
     const dReal *p1 = dBodyGetPosition (body[0]);
     const dReal *p2 = dBodyGetPosition (body[1]);
     for (int i=0; i<3; i++) p[i] = p2[i] - p1[i];
-    dMULTIPLY1_331 (pp,R1,p);
+    dMultiply1_331 (pp,R1,p);
     pp[0] += 0.5;
     pp[1] += 0.5;
     return length(pp) * 300;
@@ -754,7 +754,7 @@ dReal doStuffAndGetError (int n)
     dampRotationalMotion (0.1);
     dJointGetUniversalAxis1(joint, ax1);
     dJointGetUniversalAxis2(joint, ax2);
-    return fabs(10*dDOT(ax1, ax2));
+    return fabs(10*dCalcVectorDot3(ax1, ax2));
   }
 
   case 701: {		// 2 body: angle 1 rate
@@ -793,7 +793,7 @@ dReal doStuffAndGetError (int n)
     dampRotationalMotion (0.1);
     dJointGetUniversalAxis1(joint, ax1);
     dJointGetUniversalAxis2(joint, ax2);
-    return fabs(10*dDOT(ax1, ax2));
+    return fabs(10*dCalcVectorDot3(ax1, ax2));
   }
 
   case 721: {		// universal transmit torque test: angle1 rate
@@ -830,7 +830,7 @@ dReal doStuffAndGetError (int n)
     dJointGetUniversalAxis2(joint, ax2);
     addOscillatingTorqueAbout (0.1, ax1[0], ax1[1], ax1[2]);
     dampRotationalMotion (0.1);
-    return fabs(10*dDOT(ax1, ax2));
+    return fabs(10*dCalcVectorDot3(ax1, ax2));
   }
 
   case 731:{
@@ -871,7 +871,7 @@ dReal doStuffAndGetError (int n)
     dJointGetUniversalAxis2(joint, ax2);
     addOscillatingTorqueAbout (0.1, ax2[0], ax2[1], ax2[2]);
     dampRotationalMotion (0.1);
-    return fabs(10*dDOT(ax1, ax2));
+    return fabs(10*dCalcVectorDot3(ax1, ax2));
   }
 
   case 741:{

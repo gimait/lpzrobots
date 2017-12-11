@@ -23,11 +23,17 @@
 #ifndef _ODE_QUICK_STEP_H_
 #define _ODE_QUICK_STEP_H_
 
-#include <ode-dbl/common.h>
+#include <ode/common.h>
+
+struct dxStepperProcessingCallContext;
 
 
-void dxQuickStepper (dxWorld *world, dxBody * const *body, int nb,
-		     dxJoint * const *_joint, int nj, dReal stepsize);
+size_t dxEstimateQuickStepMemoryRequirements(
+    dxBody * const *body, unsigned int nb, dxJoint * const *_joint, unsigned int _nj);
+unsigned dxEstimateQuickStepMaxCallCount(
+    unsigned activeThreadCount, unsigned allowedThreadCount);
+
+void dxQuickStepIsland(const dxStepperProcessingCallContext *callContext);
 
 
 #endif

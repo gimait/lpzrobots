@@ -24,8 +24,9 @@
 #define _ODE_JOINT_H_
 
 
+#include <ode/contact.h>
+#include "../common.h"
 #include "../objects.h"
-#include <ode-dbl/contact.h>
 #include "../obstack.h"
 
 
@@ -47,6 +48,61 @@ enum
 
     dJOINT_DISABLED = 8
 };
+
+
+enum dJointConnectedBody
+{
+    dJCB__MIN,
+
+    dJCB_FIRST_BODY = dJCB__MIN,
+    dJCB_SECOND_BODY,
+
+    dJCB__MAX,
+
+};
+
+static inline 
+dJointConnectedBody EncodeJointOtherConnectedBody(dJointConnectedBody cbBodyKind)
+{
+    dIASSERT(dIN_RANGE(cbBodyKind, dJCB__MIN, dJCB__MAX));
+    dSASSERT(dJCB__MAX == 2);
+
+    return (dJointConnectedBody)(dJCB_FIRST_BODY + dJCB_SECOND_BODY - cbBodyKind);
+}
+
+/* joint body relativity enumeration */
+enum dJointBodyRelativity 
+{
+    dJBR__MIN,
+
+    dJBR_GLOBAL = dJBR__MIN,
+
+    dJBR__BODIES_MIN,
+
+    dJBR_BODY1 = dJBR__BODIES_MIN + dJCB_FIRST_BODY,
+    dJBR_BODY2 = dJBR__BODIES_MIN + dJCB_SECOND_BODY,
+
+    dJBR__BODIES_MAX = dJBR__BODIES_MIN + dJCB__MAX,
+
+    dJBR__MAX,
+
+    dJBR__DEFAULT = dJBR_GLOBAL,
+    dJBR__BODIES_COUNT = dJBR__BODIES_MAX - dJBR__BODIES_MIN,
+
+};
+
+ODE_PURE_INLINE int dJBREncodeBodyRelativityStatus(int relativity)
+{
+    return dIN_RANGE(relativity, dJBR__BODIES_MIN, dJBR__BODIES_MAX);
+}
+
+ODE_PURE_INLINE dJointBodyRelativity dJBRSwapBodyRelativity(int relativity)
+{
+    dIASSERT(dIN_RANGE(relativity, dJBR__BODIES_MIN, dJBR__BODIES_MAX));
+    return (dJointBodyRelativity)(dJBR_BODY1 + dJBR_BODY2 - relativity);
+}
+
+
 
 
 // there are two of these nodes in the joint, one for each connection to a
@@ -75,39 +131,64 @@ struct dxJoint : public dObject
 
     struct Info1
     {
-        int m, nub;
+        // Structure size should not exceed sizeof(pointer) bytes to have 
+        // to have good memory pattern in dxQuickStepper()
+        uint8 m, nub;
     };
 
     // info returned by getInfo2 function
 
-    struct Info2
+    enum
     {
-        // integrator parameters: frames per second (1/stepsize), default error
-        // reduction parameter (0..1).
-        dReal fps, erp;
+        GI2__J_MIN,
+        GI2__JL_MIN = GI2__J_MIN + dDA__L_MIN,
 
-        // for the first and second body, pointers to two (linear and angular)
-        // n*3 jacobian sub matrices, stored by rows. these matrices will have
-        // been initialized to 0 on entry. if the second body is zero then the
-        // J2xx pointers may be 0.
-        dReal *J1l, *J1a, *J2l, *J2a;
+        GI2_JLX = GI2__J_MIN + dDA_LX,
+        GI2_JLY = GI2__J_MIN + dDA_LY,
+        GI2_JLZ = GI2__J_MIN + dDA_LZ,
 
-        // elements to jump from one row to the next in J's
-        int rowskip;
+        GI2__JL_MAX = GI2__J_MIN + dDA__L_MAX,
 
-        // right hand sides of the equation J*v = c + cfm * lambda. cfm is the
-        // "constraint force mixing" vector. c is set to zero on entry, cfm is
-        // set to a constant value (typically very small or zero) value on entry.
-        dReal *c, *cfm;
+        GI2__JA_MIN = GI2__J_MIN + dDA__A_MIN,
 
-        // lo and hi limits for variables (set to -/+ infinity on entry).
-        dReal *lo, *hi;
+        GI2_JAX = GI2__J_MIN + dDA_AX,
+        GI2_JAY = GI2__J_MIN + dDA_AY,
+        GI2_JAZ = GI2__J_MIN + dDA_AZ,
 
-        // findex vector for variables. see the LCP solver interface for a
-        // description of what this does. this is set to -1 on entry.
-        // note that the returned indexes are relative to the first index of
-        // the constraint.
-        int *findex;
+        GI2__JA_MAX = GI2__J_MIN + dDA__A_MAX,
+        GI2__J_MAX = GI2__J_MIN + dDA__MAX,
+    };
+
+    enum
+    {
+        GI2_RHS,
+        GI2_CFM,
+        GI2__RHS_CFM_MAX,
+    };
+
+    enum
+    {
+        GI2_LO,
+        GI2_HI,
+        GI2__LO_HI_MAX,
+    };
+
+    // info returned by getSureMaxInfo function. 
+    // The information is used for memory reservation in calculations.
+
+    struct SureMaxInfo
+    {
+        // The value of `max_m' must ALWAYS be not less than the value of `m'
+        // the getInfo1 call can generate in current joint state. Another 
+        // requirement is that the value should be provided very quickly, 
+        // without the excessive calculations.
+        // If it is hard/impossible to quickly predict the maximal value of `m'
+        // (which is the case for most joint types) the maximum for current 
+        // joint type in general should be returned. If it can be known the `m'
+        // will be smaller, it can save a bit of memory from being reserved 
+        // for calculations if that smaller value is returned.
+
+        uint8 max_m; // Estimate of maximal `m' in Info1
     };
 
 
@@ -120,18 +201,47 @@ struct dxJoint : public dObject
     dxJoint( dxWorld *w );
     virtual ~dxJoint();
 
+    bool GetIsJointReverse() const { return (this->flags & dJOINT_REVERSE) != 0; }
+
     virtual void getInfo1( Info1* info ) = 0;
-    virtual void getInfo2( Info2* info ) = 0;
+
+    // integrator parameters
+    virtual void getInfo2( 
+        // fps=frames per second (1/stepsize), erp=default error reduction parameter (0..1)
+        dReal worldFPS, dReal worldERP, 
+        // elements to jump from one row to the next in J's
+        int rowskip,
+        // for the first and second body, pointers to two (linear and angular)
+        // n*3 jacobian sub matrices, stored by rows. these matrices will have
+        // been initialized to 0 on entry. if the second body is zero then the
+        // J2xx pointers may be 0.
+        dReal *J1, dReal *J2,
+        // elements to jump from one pair of scalars to the next
+        int pairskip,
+        // right hand sides of the equation J*v = c + cfm * lambda. cfm is the
+        // "constraint force mixing" vector. c is set to zero on entry, cfm is
+        // set to a constant value (typically very small or zero) value on entry.
+        dReal *pairRhsCfm,
+        // lo and hi limits for variables (set to -/+ infinity on entry).
+        dReal *pairLoHi,
+        // findex vector for variables. see the LCP solver interface for a
+        // description of what this does. this is set to -1 on entry.
+        // note that the returned indexes are relative to the first index of
+        // the constraint.
+        int *findex) = 0;
+    // This call quickly!!! estimates maximum value of "m" that could be returned by getInfo1()
+    // See comments at definition of SureMaxInfo for details.
+    virtual void getSureMaxInfo( SureMaxInfo* info ) = 0;
     virtual dJointType type() const = 0;
     virtual size_t size() const = 0;
 
     /// Set values which are relative with respect to bodies.
     /// Each dxJoint should redefine it if needed.
-    virtual void setRelativeValues() {};
+    virtual void setRelativeValues();
 
-	// Test if this joint should be used in the simulation step
-	// (has the enabled flag set, and is attached to at least one dynamic body)
-	bool isEnabled() const;
+    // Test if this joint should be used in the simulation step
+    // (has the enabled flag set, and is attached to at least one dynamic body)
+    bool isEnabled() const;
 };
 
 
@@ -140,10 +250,32 @@ struct dxJoint : public dObject
 
 struct dxJointGroup : public dBase
 {
-    int num;        // number of joints on the stack
-    dObStack stack; // a stack of (possibly differently sized) dxJoint
-};                  // objects.
+    dxJointGroup(): m_num(0), m_stack() {}
 
+    template<class T>
+    T *alloc(dWorldID w)
+    {
+        T *j = (T *)m_stack.alloc(sizeof(T));
+        if (j != NULL) {
+            ++m_num;
+            new(j) T(w);
+            j->flags |= dJOINT_INGROUP;
+        }
+        return j;
+    }
+
+    size_t getJointCount() const { return m_num; }
+    size_t exportJoints(dxJoint **jlist);
+
+    void *beginEnum() { return m_stack.rewind(); }
+    void *continueEnum(size_t num_bytes) { return m_stack.next(num_bytes); }
+
+    void freeAll();
+
+private:
+    size_t m_num;        // number of joints on the stack
+    dObStack m_stack; // a stack of (possibly differently sized) dxJoint objects.
+};
 
 // common limit and motor information for a single joint axis of movement
 struct dxJointLimitMotor
@@ -160,19 +292,29 @@ struct dxJointLimitMotor
 
     void init( dxWorld * );
     void set( int num, dReal value );
-    dReal get( int num );
-    int testRotationalLimit( dReal angle );
-    int addLimot( dxJoint *joint, dxJoint::Info2 *info, int row,
-                  const dVector3 ax1, int rotational );
+    dReal get( int num ) const;
+    bool testRotationalLimit( dReal angle );
+
+    enum
+    {
+        GI2__JL_MIN = dxJoint::GI2__JL_MIN,
+        GI2__JA_MIN = dxJoint::GI2__JA_MIN,
+        GI2_JAX = dxJoint::GI2_JAX,
+        GI2_JAY = dxJoint::GI2_JAY,
+        GI2_JAZ = dxJoint::GI2_JAZ,
+        GI2_RHS = dxJoint::GI2_RHS,
+        GI2_CFM = dxJoint::GI2_CFM,
+        GI2_LO = dxJoint::GI2_LO,
+        GI2_HI = dxJoint::GI2_HI,
+    };
+
+    bool addLimot( dxJoint *joint, dReal fps, 
+        dReal *J1, dReal *J2, dReal *pairRhsCfm, dReal *pairLoHi,
+        const dVector3 ax1, int rotational );
+    bool addTwoPointLimot( dxJoint *joint, dReal fps,
+        dReal *J1, dReal *J2, dReal *pairRhsCfm, dReal *pairLoHi,
+        const dVector3 ax1, const dVector3 pt1, const dVector3 pt2 );
 };
-
-
-
-
-
-
-
-
 
 
 #endif

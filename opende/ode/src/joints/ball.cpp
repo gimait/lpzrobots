@@ -21,6 +21,8 @@
  *************************************************************************/
 
 
+#include <ode/odeconfig.h>
+#include "config.h"
 #include "ball.h"
 #include "joint_internal.h"
 
@@ -28,12 +30,19 @@
 // ball and socket
 
 dxJointBall::dxJointBall( dxWorld *w ) :
-        dxJoint( w )
+    dxJoint( w )
 {
     dSetZero( anchor1, 4 );
     dSetZero( anchor2, 4 );
     erp = world->global_erp;
     cfm = world->global_cfm;
+}
+
+
+void 
+dxJointBall::getSureMaxInfo( SureMaxInfo* info )
+{
+    info->max_m = 3;
 }
 
 
@@ -46,13 +55,15 @@ dxJointBall::getInfo1( dxJoint::Info1 *info )
 
 
 void
-dxJointBall::getInfo2( dxJoint::Info2 *info )
+dxJointBall::getInfo2( dReal worldFPS, dReal /*worldERP*/, 
+    int rowskip, dReal *J1, dReal *J2,
+    int pairskip, dReal *pairRhsCfm, dReal *pairLoHi, 
+    int *findex )
 {
-    info->erp = erp;
-    info->cfm[0] = cfm;
-    info->cfm[1] = cfm;
-    info->cfm[2] = cfm;
-    setBall( this, info, anchor1, anchor2 );
+    pairRhsCfm[GI2_CFM] = cfm;
+    pairRhsCfm[pairskip + GI2_CFM] = cfm;
+    pairRhsCfm[2 * pairskip + GI2_CFM] = cfm;
+    setBall( this, worldFPS, this->erp, rowskip, J1, J2, pairskip, pairRhsCfm, anchor1, anchor2 );
 }
 
 

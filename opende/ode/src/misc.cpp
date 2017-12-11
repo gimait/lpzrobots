@@ -20,151 +20,198 @@
  *                                                                       *
  *************************************************************************/
 
-#include <ode-dbl/odeconfig.h>
+#include <ode/odeconfig.h>
+#include <ode/misc.h>
 #include "config.h"
-#include <ode-dbl/misc.h>
-#include <ode-dbl/matrix.h>
+#include "matrix.h"
+#include "error.h"
+#include "odeou.h"
 
 //****************************************************************************
 // random numbers
 
-static unsigned long seed = 0;
+static volatile duint32 seed = 0;
 
 unsigned long dRand()
 {
-  seed = (1664525L*seed + 1013904223L) & 0xffffffff;
-  return seed;
+    duint32 origSeed, newSeed;
+#if !dTHREADING_INTF_DISABLED
+    do {
+#endif
+        origSeed = seed;
+        newSeed = ((duint32)1664525 * origSeed + (duint32)1013904223) & (duint32)0xffffffff;
+#if dTHREADING_INTF_DISABLED
+        seed = newSeed;
+#else
+    } while (!AtomicCompareExchange((volatile atomicord32 *)&seed, origSeed, newSeed));
+#endif
+    return newSeed;
 }
 
 
 unsigned long  dRandGetSeed()
 {
-  return seed;
+    return seed;
 }
 
 
 void dRandSetSeed (unsigned long s)
 {
-  seed = s;
+    seed = s;
 }
 
 
 int dTestRand()
 {
-  unsigned long oldseed = seed;
-  int ret = 1;
-  seed = 0;
-  if (dRand() != 0x3c6ef35f || dRand() != 0x47502932 ||
-      dRand() != 0xd1ccf6e9 || dRand() != 0xaaf95334 ||
-      dRand() != 0x6252e503) ret = 0;
-  seed = oldseed;
-  return ret;
+    unsigned long oldseed = seed;
+    int ret = 1;
+    seed = 0;
+    if (dRand() != 0x3c6ef35f || dRand() != 0x47502932 ||
+        dRand() != 0xd1ccf6e9 || dRand() != 0xaaf95334 ||
+        dRand() != 0x6252e503) ret = 0;
+    seed = oldseed;
+    return ret;
 }
 
 
 // adam's all-int straightforward(?) dRandInt (0..n-1)
 int dRandInt (int n)
 {
-  // seems good; xor-fold and modulus
-  const unsigned long un = n;
-  unsigned long r = dRand();
-  
-  // note: probably more aggressive than it needs to be -- might be
-  //       able to get away without one or two of the innermost branches.
-  if (un <= 0x00010000UL) {
-    r ^= (r >> 16);
-    if (un <= 0x00000100UL) {
-      r ^= (r >> 8);
-      if (un <= 0x00000010UL) {
-        r ^= (r >> 4);
-        if (un <= 0x00000004UL) {
-          r ^= (r >> 2);
-          if (un <= 0x00000002UL) {
-            r ^= (r >> 1);
-          }
-        }
-      }
-    }
-  }
+    int result;
+    // Since there is no memory barrier macro in ODE assign via volatile variable 
+    // to prevent compiler reusing seed as value of `r'
+    volatile unsigned long raw_r = dRand();
+    duint32 r = (duint32)raw_r;
+    
+    duint32 un = n;
+    dIASSERT(sizeof(n) == sizeof(un));
 
-  return (int) (r % un);    
+    // note: probably more aggressive than it needs to be -- might be
+    //       able to get away without one or two of the innermost branches.
+    // if (un <= 0x00010000UL) {
+    //     r ^= (r >> 16);
+    //     if (un <= 0x00000100UL) {
+    //         r ^= (r >> 8);
+    //         if (un <= 0x00000010UL) {
+    //             r ^= (r >> 4);
+    //             if (un <= 0x00000004UL) {
+    //                 r ^= (r >> 2);
+    //                 if (un <= 0x00000002UL) {
+    //                     r ^= (r >> 1);
+    //                 }
+    //             }
+    //         }
+    //     }
+    // }
+    // Optimized version of above
+    if (un <= (duint32)0x00000010) {
+        r ^= (r >> 16);
+        r ^= (r >> 8);
+        r ^= (r >> 4);
+        if (un <= (duint32)0x00000002) {
+            r ^= (r >> 2);
+            r ^= (r >> 1);
+            result = (r/* & (duint32)0x01*/) & (un >> 1);
+        } else {
+            if (un <= (duint32)0x00000004) {
+                r ^= (r >> 2);
+                result = ((r & (duint32)0x03) * un) >> 2;
+            } else {
+                result = ((r & (duint32)0x0F) * un) >> 4;
+            }
+        }
+    } else {
+        if (un <= (duint32)0x00000100) {
+            r ^= (r >> 16);
+            r ^= (r >> 8);
+            result = ((r & (duint32)0xFF) * un) >> 8;
+        } else {
+            if (un <= (duint32)0x00010000) {
+                r ^= (r >> 16);
+                result = ((r & (duint32)0xFFFF) * un) >> 16;
+            } else {
+                result = (int)(((duint64)r * un) >> 32);
+            }
+        }
+    }
+
+    return result;
 }
 
 
 dReal dRandReal()
 {
-  return ((dReal) dRand()) / ((dReal) 0xffffffff);
+    return (dReal)(((double) dRand()) / ((double) 0xffffffff));
 }
 
 //****************************************************************************
 // matrix utility stuff
 
-void dPrintMatrix (const dReal *A, int n, int m, char *fmt, FILE *f)
+void dPrintMatrix (const dReal *A, int n, int m, const char *fmt, FILE *f)
 {
-  int i,j;
-  int skip = dPAD(m);
-  for (i=0; i<n; i++) {
-    for (j=0; j<m; j++) fprintf (f,fmt,A[i*skip+j]);
-    fprintf (f,"\n");
-  }
+    int skip = dPAD(m);
+    const dReal *Arow = A;
+    for (int i=0; i<n; Arow+=skip, ++i) {
+        for (int j=0; j<m; ++j) fprintf (f,fmt,Arow[j]);
+        fprintf (f,"\n");
+    }
 }
 
 
 void dMakeRandomVector (dReal *A, int n, dReal range)
 {
-  int i;
-  for (i=0; i<n; i++) A[i] = (dRandReal()*REAL(2.0)-REAL(1.0))*range;
+    int i;
+    for (i=0; i<n; i++) A[i] = (dRandReal()*REAL(2.0)-REAL(1.0))*range;
 }
 
 
 void dMakeRandomMatrix (dReal *A, int n, int m, dReal range)
 {
-  int i,j;
-  int skip = dPAD(m);
-  dSetZero (A,n*skip);
-  for (i=0; i<n; i++) {
-    for (j=0; j<m; j++) A[i*skip+j] = (dRandReal()*REAL(2.0)-REAL(1.0))*range;
-  }
+    int skip = dPAD(m);
+    //  dSetZero (A,n*skip);
+    dReal *Arow = A;
+    for (int i=0; i<n; Arow+=skip, ++i) {
+        for (int j=0; j<m; ++j) Arow[j] = (dRandReal()*REAL(2.0)-REAL(1.0))*range;
+    }
 }
 
 
 void dClearUpperTriangle (dReal *A, int n)
 {
-  int i,j;
-  int skip = dPAD(n);
-  for (i=0; i<n; i++) {
-    for (j=i+1; j<n; j++) A[i*skip+j] = 0;
-  }
+    int skip = dPAD(n);
+    dReal *Arow = A;
+    for (int i=0; i<n; Arow+=skip, ++i) {
+        for (int j=i+1; j<n; ++j) Arow[j] = 0;
+    }
 }
 
 
 dReal dMaxDifference (const dReal *A, const dReal *B, int n, int m)
 {
-  int i,j;
-  int skip = dPAD(m);
-  dReal diff,max;
-  max = 0;
-  for (i=0; i<n; i++) {
-    for (j=0; j<m; j++) {
-      diff = dFabs(A[i*skip+j] - B[i*skip+j]);
-      if (diff > max) max = diff;
+    int skip = dPAD(m);
+    dReal max = REAL(0.0);
+    const dReal *Arow = A, *Brow = B;
+    for (int i=0; i<n; Arow+=skip, Brow +=skip, ++i) {
+        for (int j=0; j<m; ++j) {
+            dReal diff = dFabs(Arow[j] - Brow[j]);
+            if (diff > max) max = diff;
+        }
     }
-  }
-  return max;
+    return max;
 }
 
 
 dReal dMaxDifferenceLowerTriangle (const dReal *A, const dReal *B, int n)
 {
-  int i,j;
-  int skip = dPAD(n);
-  dReal diff,max;
-  max = 0;
-  for (i=0; i<n; i++) {
-    for (j=0; j<=i; j++) {
-      diff = dFabs(A[i*skip+j] - B[i*skip+j]);
-      if (diff > max) max = diff;
+    int skip = dPAD(n);
+    dReal max = REAL(0.0);
+    const dReal *Arow = A, *Brow = B;
+    for (int i=0; i<n; Arow+=skip, Brow+=skip, ++i) {
+        for (int j=0; j<=i; ++j) {
+            dReal diff = dFabs(Arow[j] - Brow[j]);
+            if (diff > max) max = diff;
+        }
     }
-  }
-  return max;
+    return max;
 }
+

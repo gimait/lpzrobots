@@ -188,7 +188,7 @@ bool HybridModel::Build(const OPCODECREATE& create)
 	struct Local
 	{
 		// A callback to count leaf nodes
-		static bool CountLeaves(const AABBTreeNode* current, udword depth, void* user_data)
+		static bool CountLeaves(const AABBTreeNode* current, udword /*depth*/, void* user_data)
 		{
 			if(current->IsLeaf())
 			{
@@ -199,7 +199,7 @@ bool HybridModel::Build(const OPCODECREATE& create)
 		}
 
 		// A callback to setup leaf nodes in our internal structures
-		static bool SetupLeafData(const AABBTreeNode* current, udword depth, void* user_data)
+		static bool SetupLeafData(const AABBTreeNode* current, udword /*depth*/, void* user_data)
 		{
 			if(current->IsLeaf())
 			{
@@ -356,7 +356,7 @@ bool HybridModel::Refit()
 	Point Min,Max;
 	Point Min_,Max_;
 	udword Index = mTree->GetNbNodes();
-	AABBNoLeafNode* Nodes = (AABBNoLeafNode*)((AABBNoLeafTree*)mTree)->GetNodes();
+	AABBNoLeafNode* Nodes = const_cast<AABBNoLeafNode *>(static_cast<const AABBNoLeafNode *>(static_cast<AABBNoLeafTree *>(mTree)->GetNodes()));
 	while(Index--)
 	{
 		AABBNoLeafNode& Current = Nodes[Index];
