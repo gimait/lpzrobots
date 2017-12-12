@@ -20,8 +20,11 @@
  *                                                                       *
  *************************************************************************/
 
+<<<<<<< HEAD
 #include <string>
 
+=======
+>>>>>>> parent of c757c4e1... renamed globally ode to ode-dbl
 #include <ode/ode.h>
 #include <drawstuff/drawstuff.h>
 #include "texturepath.h"

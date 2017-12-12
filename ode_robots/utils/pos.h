@@ -20,6 +20,38 @@
  *   Free Software Foundation, Inc.,                                       *
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  *                                                                         *
+<<<<<<< HEAD
+=======
+ *   $Log$
+ *   Revision 1.5  2010-03-05 14:32:55  martius
+ *   camera sensor added
+ *   for that the scenegraph structure was changed into root, world, scene
+ *   camera does not work with shadows
+ *   works with newest version of ode (0.11)
+ *
+ *   Revision 1.4  2009/02/04 09:38:00  martius
+ *   operator * added
+ *
+ *   Revision 1.3  2006/08/08 17:04:47  martius
+ *   added new sensor model
+ *
+ *   Revision 1.2  2006/07/14 12:23:56  martius
+ *   selforg becomes HEAD
+ *
+ *   Revision 1.1.2.4  2005/12/21 17:42:16  martius
+ *   toPosition
+ *
+ *   Revision 1.1.2.3  2005/12/13 18:12:20  martius
+ *   some utils
+ *
+ *   Revision 1.1.2.2  2005/12/12 23:42:14  martius
+ *   Pos is a class againt to have customisable Constructors
+ *
+ *   Revision 1.1.2.1  2005/12/11 23:35:08  martius
+ *   *** empty log message ***
+ *
+ *
+>>>>>>> parent of c757c4e1... renamed globally ode to ode-dbl
  ***************************************************************************/
 #ifndef __POS_H
 #define __POS_H
@@ -28,7 +60,7 @@
 
 #include <osg/Vec3>
 #include <osg/Vec4>
-#include <ode-dbl/ode.h>
+#include <ode/ode.h>
 #include <selforg/position.h>
 
 namespace lpzrobots{

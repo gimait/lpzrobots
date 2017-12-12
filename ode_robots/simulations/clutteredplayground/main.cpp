@@ -21,6 +21,7 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  *                                                                         *
  *   $Log$
+<<<<<<< HEAD
  *   Revision 1.8  2011-10-14 09:36:18  martius
  *   snakes have no frictionGround parameter anymore, since it was not used,
  *    use the substances now
@@ -33,6 +34,9 @@
  *   renamed globally ode to ode-dbl
  *
  *   Revision 1.5  2008/05/01 22:03:54  martius
+=======
+ *   Revision 1.5  2008-05-01 22:03:54  martius
+>>>>>>> parent of c757c4e1... renamed globally ode to ode-dbl
  *   build system expanded to allow system wide installation
  *   that implies  <ode_robots/> for headers in simulations
  *
@@ -104,7 +108,7 @@
 #include <stdio.h>
 
 // include ode library
-#include <ode-dbl/ode.h>
+#include <ode/ode.h>
 
 // include noisegenerator (used for adding noise to sensorvalues)
 #include <selforg/noisegenerator.h>

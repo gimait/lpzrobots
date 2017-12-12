@@ -32,6 +32,13 @@
 
 #if dTRIMESH_ENABLED && dTRIMESH_OPCODE
 
+<<<<<<< HEAD
+=======
+#include <ode/collision.h>
+#include <ode/matrix.h>
+#include <ode/rotation.h>
+#include <ode/odemath.h>
+>>>>>>> parent of c757c4e1... renamed globally ode to ode-dbl
 #include "collision_util.h"
 #include "collision_trimesh_opcode.h"
 #include "collision_trimesh_internal_impl.h"

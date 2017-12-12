@@ -23,7 +23,10 @@
 // This is a demo of the QuickStep and StepFast methods,
 // originally by David Whittaker.
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> parent of c757c4e1... renamed globally ode to ode-dbl
 #include <ode/ode.h>
 #include <drawstuff/drawstuff.h>
 #include "texturepath.h"

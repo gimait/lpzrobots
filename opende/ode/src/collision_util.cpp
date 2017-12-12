@@ -29,8 +29,12 @@ functions that are defined in the public header files.
 
 #include <ode/common.h>
 #include <ode/collision.h>
+<<<<<<< HEAD
 #include "config.h"
 #include "odemath.h"
+=======
+#include <ode/odemath.h>
+>>>>>>> parent of c757c4e1... renamed globally ode to ode-dbl
 #include "collision_util.h"
 
 //****************************************************************************

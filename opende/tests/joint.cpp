@@ -30,7 +30,10 @@
 ////////////////////////////////////////////////////////////////////////////////
 #include <UnitTest++.h>
 #include <ode/ode.h>
+<<<<<<< HEAD
 #include "../ode/src/config.h"
+=======
+>>>>>>> parent of c757c4e1... renamed globally ode to ode-dbl
 #include "../ode/src/joints/joints.h"
 
 

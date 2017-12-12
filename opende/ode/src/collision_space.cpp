@@ -26,7 +26,16 @@ spaces
 
 */
 
+<<<<<<< HEAD
 #include <vector>
+=======
+#include <ode/common.h>
+#include <ode/matrix.h>
+#include <ode/collision_space.h>
+#include <ode/collision.h>
+#include "util.h"
+#include "collision_kernel.h"
+>>>>>>> parent of c757c4e1... renamed globally ode to ode-dbl
 
 #include <ode/common.h>
 #include <ode/collision_space.h>

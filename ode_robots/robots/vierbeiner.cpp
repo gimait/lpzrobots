@@ -20,9 +20,62 @@
  *   Free Software Foundation, Inc.,                                       *
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  *                                                                         *
+<<<<<<< HEAD
+=======
+ *   $Log$
+ *   Revision 1.11  2009-03-13 09:19:53  martius
+ *   changed texture handling in osgprimitive
+ *   new OsgBoxTex that supports custom texture repeats and so on
+ *   Box uses osgBoxTex now. We also need osgSphereTex and so on.
+ *   setTexture has to be called before init() of the primitive
+ *
+ *   Revision 1.10  2008/05/07 16:45:52  martius
+ *   code cosmetics and documentation
+ *
+ *   Revision 1.9  2007/12/13 16:56:21  martius
+ *   more walking suitable configuration
+ *
+ *   Revision 1.8  2007/12/07 10:55:34  der
+ *   jippie
+ *
+ *   Revision 1.7  2007/11/07 13:21:16  martius
+ *   doInternal stuff changed signature
+ *
+ *   Revision 1.6  2007/09/06 18:48:00  martius
+ *   createNewSimpleSpace used
+ *
+ *   Revision 1.5  2007/07/12 18:05:13  martius
+ *   *** empty log message ***
+ *
+ *   Revision 1.4  2007/07/03 12:59:57  martius
+ *   new servo parameter, for current servo implementation
+ *
+ *   Revision 1.3  2007/04/03 16:37:09  der
+ *   *** empty log message ***
+ *
+ *   Revision 1.2  2007/03/16 10:57:44  martius
+ *   no elasticity, since substance support allows to make Playground soft
+ *   new substance and collision control
+ *
+ *   Revision 1.1  2007/02/23 09:30:13  der
+ *   dog :-)
+ *
+ *   Revision 1.3  2007/02/21 16:08:30  der
+ *   frontlegs no feet
+ *   ankles are powered
+ *   invisible pole (or box) in top
+ *
+ *   Revision 1.2  2007/02/12 13:30:40  martius
+ *   dog looks allready nicer
+ *
+ *   Revision 1.1  2007/02/02 08:58:03  martius
+ *   dog
+ * *
+ *
+>>>>>>> parent of c757c4e1... renamed globally ode to ode-dbl
  ***************************************************************************/
 #include <assert.h>
-#include <ode-dbl/ode.h>
+#include <ode/ode.h>
 
 // include primitives (box, spheres, cylinders ...)
 #include <ode_robots/primitive.h>

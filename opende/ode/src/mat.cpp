@@ -21,11 +21,19 @@
  *************************************************************************/
 
 #include <ode/odeconfig.h>
+<<<<<<< HEAD
 #include <ode/misc.h>
 #include <ode/error.h>
 #include <ode/memory.h>
 #include "config.h"
 #include "matrix.h"
+=======
+#include "config.h"
+#include <ode/misc.h>
+#include <ode/matrix.h>
+#include <ode/error.h>
+#include <ode/memory.h>
+>>>>>>> parent of c757c4e1... renamed globally ode to ode-dbl
 #include "mat.h"
 
 

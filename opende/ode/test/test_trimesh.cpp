@@ -22,7 +22,7 @@
 
 // TriMesh test by Erwin de Vries
 
-#include <ode-dbl/ode.h>
+#include <ode/ode.h>
 #include <drawstuff/drawstuff.h>
 
 #ifdef _MSC_VER

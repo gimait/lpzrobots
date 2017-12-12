@@ -21,9 +21,22 @@
  *************************************************************************/
 
 #include <ode/common.h>
+<<<<<<< HEAD
 #include "config.h"
 #include "odemath.h"
 
+=======
+#include <ode/odemath.h>
+
+// get some math functions under windows
+#ifdef WIN32
+#include <float.h>
+#ifndef CYGWIN			// added by andy for cygwin
+#undef copysign
+#define copysign(a,b) ((dReal)_copysign(a,b))
+#endif				// added by andy for cygwin
+#endif
+>>>>>>> parent of c757c4e1... renamed globally ode to ode-dbl
 
 #undef dSafeNormalize3
 #undef dSafeNormalize4

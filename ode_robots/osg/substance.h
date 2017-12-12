@@ -21,8 +21,41 @@
  *   Free Software Foundation, Inc.,                                       *
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  *                                                                         *
+<<<<<<< HEAD
  ***************************************************************************/
 /*
+=======
+ *  DESCRIPTION                                                            *
+ *                                                                         *
+ *   $Log$
+ *   Revision 1.7  2008-09-11 15:24:01  martius
+ *   motioncallback resurrected
+ *   noContact substance
+ *   use slider center of the connecting objects for slider drawing
+ *
+ *   Revision 1.6  2008/08/27 19:12:02  martius
+ *   comment
+ *
+ *   Revision 1.5  2008/02/14 14:41:48  der
+ *   added snow as a new substance
+ *
+ *   Revision 1.4  2007/08/24 11:55:54  martius
+ *   collision callbacks get more information
+ *
+ *   Revision 1.3  2007/07/17 07:20:29  martius
+ *   updated comments
+ *
+ *   Revision 1.2  2007/07/03 13:14:57  martius
+ *   stepsize included, but not yet sorted out
+ *   changing stepsize varies the behaviour
+ *
+ *   Revision 1.1  2007/03/16 10:50:32  martius
+ *   initial version
+ *
+ *
+ *   
+
+>>>>>>> parent of c757c4e1... renamed globally ode to ode-dbl
 This file concerns material implementation in the simulator.
 
 Terminology:
@@ -45,8 +78,13 @@ In general:
 #ifndef __SUBSTANCE_H
 #define __SUBSTANCE_H
 
+<<<<<<< HEAD
 #include<ode-dbl/common.h>
 #include<ode-dbl/contact.h>
+=======
+#include<ode/common.h>
+#include<ode/contact.h> 
+>>>>>>> parent of c757c4e1... renamed globally ode to ode-dbl
 
 namespace lpzrobots {
 

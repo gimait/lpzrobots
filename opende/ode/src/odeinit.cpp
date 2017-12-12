@@ -27,9 +27,14 @@ ODE initialization/finalization code
 */
 
 #include <ode/common.h>
+<<<<<<< HEAD
 #include <ode/odeinit.h>
 // <ode/objects.h> included for dWorldQuickStepCleanup()
 #include <ode/objects.h>
+=======
+#include <ode/odemath.h>
+#include <ode/odeinit.h>
+>>>>>>> parent of c757c4e1... renamed globally ode to ode-dbl
 #include "config.h"
 #include "odemath.h"
 #include "collision_kernel.h"

@@ -20,11 +20,84 @@
  *   Free Software Foundation, Inc.,                                       *
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  *                                                                         *
+<<<<<<< HEAD
+=======
+ *   $Log$
+ *   Revision 1.12  2009-04-02 10:12:25  martius
+ *   Texture handling changed
+ *
+ *   Revision 1.11  2007/12/06 10:02:49  der
+ *   abstractground: returns now cornerpoints
+ *   abstractobstacle: is now trackable
+ *   hudstatistics: supports now AbstractmMeasure
+ *
+ *   Revision 1.10  2007/03/16 11:01:37  martius
+ *   abstractobstacle gets mor functionallity
+ *   setSubstance
+ *
+ *   Revision 1.9  2006/07/14 12:23:32  martius
+ *   selforg becomes HEAD
+ *
+ *   Revision 1.8.4.9  2006/06/29 16:39:55  robot3
+ *   -you can now see bounding shapes if you type ./start -drawboundings
+ *   -includes cleared up
+ *   -abstractobstacle and abstractground have now .cpp-files
+ *
+ *   Revision 1.8.4.8  2006/06/16 22:27:26  martius
+ *   getMainPrimtive
+ *
+ *   Revision 1.8.4.7  2006/05/23 13:38:02  robot3
+ *   -fixed some creating bugs
+ *   -setColor,setTexture and createGround must be
+ *    called before setPosition now
+ *
+ *   Revision 1.8.4.6  2006/05/18 12:54:24  robot3
+ *   -fixed not being able to change the color after positioning
+ *    the obstacle
+ *   -cleared the files up
+ *
+ *   Revision 1.8.4.5  2006/05/11 08:59:15  robot3
+ *   -fixed a positioning bug (e.g. for passivesphere)
+ *   -some methods moved to abstractobstacle.h for avoiding inconsistencies
+ *
+ *   Revision 1.8.4.4  2006/03/30 12:34:51  martius
+ *   documentation updated
+ *
+ *   Revision 1.8.4.3  2006/03/29 15:04:38  martius
+ *   have pose now
+ *
+ *   Revision 1.8.4.2  2005/12/06 10:13:23  martius
+ *   openscenegraph integration started
+ *
+ *   Revision 1.8.4.1  2005/11/14 17:37:14  martius
+ *   moved to selforg
+ *
+ *   Revision 1.8  2005/10/25 19:26:56  fhesse
+ *   comments adjusted and in doxygen style
+ *
+ *   Revision 1.7  2005/09/22 12:24:36  martius
+ *   removed global variables
+ *   OdeHandle and GlobalData are used instead
+ *   sensor prepared
+ *
+ *   Revision 1.6  2005/09/13 13:20:12  martius
+ *   initialised color
+ *
+ *   Revision 1.5  2005/08/29 06:32:25  martius
+ *   added virtual destructor
+ *
+ *   Revision 1.4  2005/07/18 14:52:33  martius
+ *   world and space are not pointers anymore.
+ *
+ *   Revision 1.3  2005/06/15 14:22:11  martius
+ *   GPL included
+ *                                                                 *
+>>>>>>> parent of c757c4e1... renamed globally ode to ode-dbl
  ***************************************************************************/
 #ifndef __ABSTRACTOBSTACLE_H
 #define __ABSTRACTOBSTACLE_H
 
-#include <ode-dbl/ode.h>
+#include <ode/ode.h>
 
 #include "odehandle.h"
 #include "osghandle.h"

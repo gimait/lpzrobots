@@ -23,7 +23,7 @@
 // This is a demo of the QuickStep and StepFast methods,
 // originally by David Whittaker.
 
-#include <ode-dbl/ode.h>
+#include <ode/ode.h>
 #include <drawstuff/drawstuff.h>
 
 #ifdef _MSC_VER

@@ -20,6 +20,7 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  *                                                                         *
  *   $Log$
+<<<<<<< HEAD
  *   Revision 1.6  2011-05-30 13:56:42  martius
  *   clean up: moved old code to oldstuff
  *   configable changed: notifyOnChanges is now used
@@ -32,6 +33,9 @@
  *   renamed globally ode to ode-dbl
  *
  *   Revision 1.3  2009/11/26 14:21:54  der
+=======
+ *   Revision 1.3  2009-11-26 14:21:54  der
+>>>>>>> parent of c757c4e1... renamed globally ode to ode-dbl
  *   Larger changes
  *   :wq
  *
@@ -112,7 +116,7 @@
  *
  ***************************************************************************/
 #include <assert.h>
-#include <ode-dbl/ode.h>
+#include <ode/ode.h>
 
 // include primitives (box, spheres, cylinders ...)
 #include <ode_robots/primitive.h>

@@ -20,13 +20,24 @@
  *   Free Software Foundation, Inc.,                                       *
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  *                                                                         *
+<<<<<<< HEAD
+=======
+ *   $Log$
+ *   Revision 1.2  2006-07-14 12:23:55  martius
+ *   selforg becomes HEAD
+ *
+ *   Revision 1.1.2.1  2006/02/02 09:00:00  martius
+ *   axis type
+ *
+ *
+>>>>>>> parent of c757c4e1... renamed globally ode to ode-dbl
  ***************************************************************************/
 #ifndef __AXIS_H
 #define __AXIS_H
 
 #include <osg/Vec3>
 #include <osg/Vec4>
-#include <ode-dbl/ode.h>
+#include <ode/ode.h>
 #include <iostream>
 
 namespace lpzrobots{

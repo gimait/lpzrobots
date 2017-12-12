@@ -21,12 +21,12 @@
  *************************************************************************/
 
 // Test for non-capped cylinder, by Bram Stolk
-#include <ode-dbl/config.h>
+#include <ode/config.h>
 #include <assert.h>
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
-#include <ode-dbl/ode.h>
+#include <ode/ode.h>
 #include <drawstuff/drawstuff.h>
 
 #include "world_geom3.h" // this is our world mesh

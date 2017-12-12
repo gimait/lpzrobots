@@ -32,6 +32,10 @@ internal data structures and functions for collision detection.
 #include <ode/common.h>
 #include <ode/contact.h>
 #include <ode/collision.h>
+<<<<<<< HEAD
+=======
+#include "config.h"
+>>>>>>> parent of c757c4e1... renamed globally ode to ode-dbl
 #include "objects.h"
 #include "odetls.h"
 #include "common.h"

@@ -21,11 +21,17 @@
  *************************************************************************/
 
 #include <ode/odeconfig.h>
+<<<<<<< HEAD
 #include <ode/misc.h>
 #include "config.h"
 #include "matrix.h"
 #include "error.h"
 #include "odeou.h"
+=======
+#include "config.h"
+#include <ode/misc.h>
+#include <ode/matrix.h>
+>>>>>>> parent of c757c4e1... renamed globally ode to ode-dbl
 
 //****************************************************************************
 // random numbers

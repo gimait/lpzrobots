@@ -2,10 +2,33 @@
 #Author:   Georg Martius  <martius@informatik.uni-leipzig.de>
 #Date:     June 2005
 
+<<<<<<< HEAD
 
 SELFORGCFG=`if type selforg-config >/dev/null 2>&1; then echo "selforg-config"; elif [ -x ../selforg/selforg-config ]; then echo "../selforg/selforg-config"; else echo "Cannot find selforg-config" 1>&2; fi`
 
 
+=======
+#
+# $Log$
+# Revision 1.28  2010-03-05 14:32:55  martius
+# camera sensor added
+# for that the scenegraph structure was changed into root, world, scene
+# camera does not work with shadows
+# works with newest version of ode (0.11)
+#
+# Revision 1.27  2009/12/01 17:32:10  martius
+# adapted Makefiles to ignore backward compat. errors
+#
+# Revision 1.26  2009/08/10 07:45:31  guettler
+# added -Wno-deprecated to avoid warnings about using old includes
+# (because we use some where are no new ones are provided yet)
+#
+#
+
+LPZROBOTS=..
+ODEROBOTS=.
+SELFORG=../selforg
+>>>>>>> parent of c757c4e1... renamed globally ode to ode-dbl
 INCLUDEDIR=include/ode_robots
 # this is the command to come from the include dir back to the base
 REVINCLUDEDIR=../..
@@ -38,7 +61,16 @@ find_files = $(wildcard $(dir)/*.cpp)
 CPPFILES   := $(filter-out %flymake.cpp, $(foreach dir,$(dirs),$(find_files)))
 OFILES     := $(patsubst %.cpp,${BUILD_DIR}/%.o, $(CPPFILES))
 find_h_files = $(wildcard $(dir)/*.h)
+<<<<<<< HEAD
 HFILES   := $(filter-out %flymake.h, $(foreach dir,$(dirs),$(find_h_files)))
+=======
+HFILES   := $(foreach dir,$(dirs),$(find_h_files))
+
+UTILS = install_prefix.conf
+# utils/splitvideo
+
+CPPBASEFLAG = -Wall -Wno-deprecated -pipe -I. -DdDOUBLE -pthread $(INC) 
+>>>>>>> parent of c757c4e1... renamed globally ode to ode-dbl
 
 UTILS = install_prefix.conf ode_robots-config
 
@@ -227,8 +259,8 @@ install_prefix.conf:
 	@echo '// e.g. #define PREFIX "/usr/local"'  >> install_prefix.conf
 
 todo:
-	@grep -ni "Todo" $(CPPFILES) $(HFILES)
-	@grep -ni "Fixme" $(CPPFILES) $(HFILES)
+	grep -ni "Todo" $(CPPFILES) $(HFILES)
+	grep -ni "Fixme" $(CPPFILES) $(HFILES)
 
 ode_robots-config: ode_robots-config.m4
 	$(error "call ./configure or make all in lpzrobots again!")

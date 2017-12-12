@@ -36,8 +36,22 @@
 
 #include "collision_kernel.h"
 #include "collision_trimesh_colliders.h"
+<<<<<<< HEAD
 #include "collision_util.h"
 #include <ode/collision_trimesh.h>
+=======
+#include <ode/collision_trimesh.h>
+
+#if dTRIMESH_OPCODE
+#define BAN_OPCODE_AUTOLINK
+#include "Opcode.h"
+using namespace Opcode;
+#endif // dTRIMESH_OPCODE
+
+#if dTRIMESH_GIMPACT
+#include <GIMPACT/gimpact.h>
+#endif
+>>>>>>> parent of c757c4e1... renamed globally ode to ode-dbl
 
 #if dTLS_ENABLED
 #include "odetls.h"

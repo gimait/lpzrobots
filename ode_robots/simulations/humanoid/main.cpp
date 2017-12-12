@@ -21,6 +21,7 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  *                                                                         *
  *   $Log$
+<<<<<<< HEAD
  *   Revision 1.26  2011-10-14 09:36:18  martius
  *   snakes have no frictionGround parameter anymore, since it was not used,
  *    use the substances now
@@ -40,6 +41,9 @@
  *   renamed globally ode to ode-dbl
  *
  *   Revision 1.21  2009/10/09 17:18:03  martius
+=======
+ *   Revision 1.21  2009-10-09 17:18:03  martius
+>>>>>>> parent of c757c4e1... renamed globally ode to ode-dbl
  *   removed orientationsensors for now to enable configurable and inspectable
  *
  *   Revision 1.20  2009/09/18 15:07:18  martius
@@ -144,7 +148,7 @@
 #include <stdio.h>
 
 // include ode library
-#include <ode-dbl/ode.h>
+#include <ode/ode.h>
 
 // include noisegenerator (used for adding noise to sensorvalues)
 #include <selforg/noisegenerator.h>

@@ -34,11 +34,23 @@
 #include "matrix.h"
 #include "odemath.h"
 #include "objects.h"
+<<<<<<< HEAD
 #include "joints/joints.h"
 #include "step.h"
 #include "quickstep.h"
 #include "util.h"
 #include "odetls.h"
+=======
+#include <ode/ode.h>
+#include "joints/joints.h"
+#include <ode/odemath.h>
+#include <ode/matrix.h>
+#include "step.h"
+#include "quickstep.h"
+#include "util.h"
+#include <ode/memory.h>
+#include <ode/error.h>
+>>>>>>> parent of c757c4e1... renamed globally ode to ode-dbl
 
 // misc defines
 #define ALLOCA dALLOCA16

@@ -21,6 +21,7 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  *                                                                         *
  *   $Log$
+<<<<<<< HEAD
  *   Revision 1.10  2011-11-10 16:28:48  der
  *   liftup operator
  *
@@ -45,6 +46,9 @@
  *   renamed globally ode to ode-dbl
  *
  *   Revision 1.3  2009/11/26 14:21:54  der
+=======
+ *   Revision 1.3  2009-11-26 14:21:54  der
+>>>>>>> parent of c757c4e1... renamed globally ode to ode-dbl
  *   Larger changes
  *   :wq
  *
@@ -158,7 +162,7 @@
 #include <stdio.h>
 
 // include ode library
-#include <ode-dbl/ode.h>
+#include <ode/ode.h>
 
 // include noisegenerator (used for adding noise to sensorvalues)
 #include <selforg/noisegenerator.h>

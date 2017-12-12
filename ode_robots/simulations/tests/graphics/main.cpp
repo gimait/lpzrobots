@@ -21,6 +21,7 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  *                                                                         *
  *   $Log$
+<<<<<<< HEAD:ode_robots/simulations/tests/graphics/main.cpp
  *   Revision 1.3  2011-11-11 15:40:51  martius
  *   test for collorschema
  *
@@ -35,6 +36,9 @@
  *   renamed globally ode to ode-dbl
  *
  *   Revision 1.5  2010/03/05 14:32:55  martius
+=======
+ *   Revision 1.5  2010-03-05 14:32:55  martius
+>>>>>>> parent of c757c4e1... renamed globally ode to ode-dbl:ode_robots/simulations/test_graphics/main.cpp
  *   camera sensor added
  *   for that the scenegraph structure was changed into root, world, scene
  *   camera does not work with shadows
@@ -62,7 +66,7 @@
 #include <stdio.h>
 
 // include ode library
-#include <ode-dbl/ode.h>
+#include <ode/ode.h>
 
 // include noisegenerator (used for adding noise to sensorvalues)
 #include <selforg/noisegenerator.h>

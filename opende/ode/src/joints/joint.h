@@ -27,6 +27,10 @@
 #include <ode/contact.h>
 #include "../common.h"
 #include "../objects.h"
+<<<<<<< HEAD
+=======
+#include <ode/contact.h>
+>>>>>>> parent of c757c4e1... renamed globally ode to ode-dbl
 #include "../obstack.h"
 
 

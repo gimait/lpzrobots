@@ -31,8 +31,13 @@ some useful collision utility stuff.
 
 #include <ode/common.h>
 #include <ode/contact.h>
+<<<<<<< HEAD
 #include <ode/rotation.h>
 #include "odemath.h"
+=======
+#include <ode/odemath.h>
+#include <ode/rotation.h>
+>>>>>>> parent of c757c4e1... renamed globally ode to ode-dbl
 
 
 // given a pointer `p' to a dContactGeom, return the dContactGeom at

@@ -28,8 +28,12 @@ quaternions have the format: (s,vx,vy,vz) where (vx,vy,vz) is the
 */
 
 #include <ode/rotation.h>
+<<<<<<< HEAD
 #include "config.h"
 #include "odemath.h"
+=======
+#include <ode/odemath.h>
+>>>>>>> parent of c757c4e1... renamed globally ode to ode-dbl
 
 
 #define _R(i,j) R[(i)*4+(j)]

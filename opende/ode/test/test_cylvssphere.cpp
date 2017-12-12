@@ -22,12 +22,12 @@
 
 // Test for cylinder vs sphere, by Bram Stolk
 
-#include <ode-dbl/config.h>
+#include <ode/config.h>
 #include <assert.h>
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
-#include <ode-dbl/ode.h>
+#include <ode/ode.h>
 #include <drawstuff/drawstuff.h>
 
 #ifdef _MSC_VER

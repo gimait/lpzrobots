@@ -21,8 +21,13 @@
  *************************************************************************/
 
 #include <ode/odeconfig.h>
+<<<<<<< HEAD
 #include <ode/error.h>
 #include "config.h"
+=======
+#include "config.h"
+#include <ode/error.h>
+>>>>>>> parent of c757c4e1... renamed globally ode to ode-dbl
 
 
 static dMessageFunction *error_function = 0;

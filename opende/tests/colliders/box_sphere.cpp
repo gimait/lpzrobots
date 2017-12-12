@@ -1,5 +1,5 @@
 #include "CppTestHarness.h"
-#include <ode-dbl/ode.h>
+#include "ode/ode.h"
 
 TEST(BoxSphereIntersection)
 {

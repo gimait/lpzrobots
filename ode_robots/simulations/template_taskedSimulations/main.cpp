@@ -43,6 +43,7 @@
  *   the parallelism stuff.                                                *
  *
  *   $Log$
+<<<<<<< HEAD
  *   Revision 1.4  2011-06-03 13:42:48  martius
  *   oderobot has objects and joints, store and restore works automatically
  *   removed showConfigs and changed deprecated odeagent calls
@@ -51,6 +52,9 @@
  *   renamed globally ode to ode-dbl
  *
  *   Revision 1.2  2009/08/21 09:49:08  robot12
+=======
+ *   Revision 1.2  2009-08-21 09:49:08  robot12
+>>>>>>> parent of c757c4e1... renamed globally ode to ode-dbl
  *   (guettler) support for tasked simulations.
  *   - use the simulation template_taskedSimulations.
  *   - merged (not completely) from lpzrobots_tasked.
@@ -73,7 +77,7 @@
 #include <stdio.h>
 
 // include all necessary stuff
-#include <ode-dbl/ode.h>
+#include <ode/ode.h>
 #include <selforg/noisegenerator.h>
 #include <ode_robots/odeagent.h>
 #include <selforg/one2onewiring.h>
