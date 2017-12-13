@@ -1,7 +1,3 @@
-<<<<<<< HEAD
-=======
-
->>>>>>> parent of c757c4e1... renamed globally ode to ode-dbl
 #File:     Makefile for lpzrobot directory
 #Author:   Georg Martius  <martius@informatik.uni-leipzig.de>
 #Date:     June 2005-2011
@@ -12,11 +8,7 @@ include Makefile.conf
 
 USAGE   = "Try 'make help' for more..."
 USAGE2  = "lpzrobots Makefile Targets:"
-<<<<<<< HEAD
 USAGE3  = "Usually you do: \nmake all\n see the above description for a step by step process\n"
-=======
-USAGE3  = " Usually you do:\n  make prepare\n  \#follow instructions to compile ODE\n  make libs \# get a cup of tea\n  sudo make install"
->>>>>>> parent of c757c4e1... renamed globally ode to ode-dbl
 
 ##!help		show this help text (default)
 help:
@@ -45,7 +37,6 @@ all_intern:
 	$(SUDO) $(MAKE) install_ga_tools
 	@echo "**** Done, you can go and compile your simulations ****"
 
-<<<<<<< HEAD
 .PHONY: conf
 ##!conf		reconfigure the installation prefix and type (done automatically at first call)
 conf: usage
@@ -58,23 +49,15 @@ conf: usage
 .PHONY: utils
 ##!utils	   build utilitytools and tags (do that first)
 utils: usage
-=======
-.PHONY: prepare
-##!prepare	build tools and create dependency files and check for ODE
-prepare: usage 
->>>>>>> parent of c757c4e1... renamed globally ode to ode-dbl
 	-$(MAKE) guilogger
 	-$(MAKE) matrixviz
 	-$(MAKE) soundman
 	-$(MAKE) javacontroller
 	-$(MAKE) configurator
 	-$(MAKE) tags
-	@if test ! -e opende/Makefile; then echo -en "You need to setup ODE from first!\nYou "; else echo -n "If you want to recompile ODE you "; fi
-	@echo -e "have 2 options: use a precompiled one from our webpage or\ncompile the one in opende\nFor compiling please run:\ncd opende; sh autogen.sh\n./configure --enable-release --enable-double-precision\nmake\nsudo make install\n\nOn most SUSE linux computers it's necessary to run thereafter\nsudo ldconfig\nfor a correct linking of the libode.so!\n";
 	@echo "********************************************************************************"
 	@echo "Don't worry if you have seen a lot of errors above."
 	@echo "This is all optional stuff which is not stricly required."
-<<<<<<< HEAD
 
 
 .PHONY: install_utils
@@ -159,48 +142,6 @@ install_ga_tools: usage
 ##!  *** them first to your home directory to work with them.
 ##!
 ##!****** UNINSTALL and CLEAN ************
-=======
-	@echo "Probably you want to install the ODE and OSG now "
-	@echo " and then do \"make libs\" and \"(sudo) make install\""
-	@echo "Usually you can use make -j 2 on multicore machines but not for the installation target."
-
-.PHONY: conf
-##!conf		configure the installation prefix and type(again)
-conf: usage
-	-mv Makefile.conf Makefile.conf.bak
-	$(MAKE) Makefile.conf # automatically creates Makefile.conf
-
-.PHONY: libs
-##!libs		compile libaries in optimised and debug version
-libs: usage
-	@echo "*************** Compile selforg (optimized) *****************"
-	+cd selforg && $(MAKE) clean-all && $(MAKE) opt 	
-	@echo "*************** Compile ode_robots (optimized) **************"
-	+cd ode_robots && $(MAKE) clean-all && $(MAKE) opt	
-	@echo "*************** Compile ga_tools (optimized) **************"
-	+cd ga_tools && $(MAKE) clean-all && $(MAKE) opt	
-	@echo "*************** Compile selforg (debug) *********************"
-	+cd selforg && $(MAKE) clean && $(MAKE) lib
-	@echo "*************** Compile ode_robots (debug) ******************"
-	+cd ode_robots && $(MAKE) clean && $(MAKE) lib
-	@echo "*************** Compile ga_tools (debug) **************"
-	+cd ga_tools && $(MAKE) clean && $(MAKE) lib	
-#	@echo "*************** strip the libs             ******************"
-#	-strip selforg/libselforg_opt.a 
-#	-strip --only-keep-debug selforg/libselforg.a
-#	-strip ode_robots/libode_robots_opt.a
-#	-strip --only-keep-debug ode_robots/libode_robots.a
-#	-strip ga_tools/libga_tools_opt.a
-#	-strip --only-keep-debug ga_tools/libga_tools.a
-
-.PHONY: install
-##!install	install utils and possibly libs (if installation type: user)
-install: usage install_utils install_libs
-
-.PHONY: uninstall
-##!uninstall	removes all the installed files again
-uninstall: uninstall_intern
->>>>>>> parent of c757c4e1... renamed globally ode to ode-dbl
 
 ##!clean	  removed the object files and libs
 clean: usage
@@ -230,7 +171,6 @@ clean-all: usage
 ##!distclean	  see clean-all
 distclean :  clean-all
 
-<<<<<<< HEAD
 .PHONY: uninstall
 ##!uninstall	  removes all the installed files again (except ode)
 uninstall: uninstall_intern
@@ -242,8 +182,6 @@ uninstall_ode:
 	cd opende && make uninstall
 
 ##!****** less common targets ***********
-=======
->>>>>>> parent of c757c4e1... renamed globally ode to ode-dbl
 
 .PHONY: guilogger
 ##!guilogger	  compile guilogger
@@ -273,7 +211,6 @@ javactrl:
 soundman:
 	cd soundman/src	&& javac -d ../class/ SoundMan.java SoundManipulation.java SoundManGUI.java
 
-<<<<<<< HEAD
 
 .PHONY: confsubmodule
 confsubmodule:
@@ -299,23 +236,6 @@ confsubmodule:
 	else \
 	    echo "confsubmodule called without MODULE"; exit 1;\
 	fi
-=======
-.PHONY: install_utils
-install_utils:
-	-mkdir -p $(PREFIX)bin $(PREFIX)lib/soundMan $(PREFIX)share/lpzrobots
-	-cd neuronviz/src && $(MAKE) install
-	-cd javacontroller/src && $(MAKE) install
-	-@if [ -d guilogger/bin/guilogger.app ]; then cp guilogger/bin/guilogger.app/Contents/MacOS/guilogger $(PREFIX)bin/ && echo "copied guilogger to $(PREFIX)/bin/";  else cp guilogger/bin/guilogger $(PREFIX)bin/ && echo "copied guilogger to $(PREFIX)/bin/" || echo "Could not copy guilogger binary to $(PREFIX)bin/! Please install it by hand."; fi
-	-cp soundman/class/*.class $(PREFIX)lib/soundMan/
-	-cp soundman/bin/soundMan $(PREFIX)bin/soundMan
-	sed -i -e "s|PREFIX=.*|PREFIX=$(PREFIX)|" $(PREFIX)bin/soundMan
-	-cp ode_robots/utils/feedfile.pl $(PREFIX)bin/
-	-cp ode_robots/utils/encodevideo.sh $(PREFIX)bin/
-	-cp ode_robots/utils/transcode2allformats.sh $(PREFIX)bin/
-	-cp ode_robots/utils/selectcolumns.pl $(PREFIX)bin/
-	cp -R ode_robots/osg/data $(PREFIX)share/lpzrobots/
-	-find $(PREFIX)share/lpzrobots/ -type d -name "CVS" | xargs rm -r
->>>>>>> parent of c757c4e1... renamed globally ode to ode-dbl
 
 
 .PHONY: install_libs
