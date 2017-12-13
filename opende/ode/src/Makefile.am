@@ -8,7 +8,6 @@ AM_CPPFLAGS = -I$(top_srcdir)/include \
 
 lib_LTLIBRARIES = libode.la
 
-<<<<<<< HEAD
 libode_la_LDFLAGS = @EXTRA_LIBTOOL_LDFLAGS@ @ODE_VERSION_INFO@
 libode_la_LIBADD = joints/libjoints.la
 
@@ -16,16 +15,6 @@ libode_la_LIBADD = joints/libjoints.la
 # please, let's keep the filenames sorted
 libode_la_SOURCES =     nextafterf.c \
                         array.cpp array.h \
-=======
-lib_LTLIBRARIES = libode.la
-
-libode_la_LDFLAGS = @EXTRA_LIBTOOL_LDFLAGS@ @ODE_VERSION_INFO@
-libode_la_LIBADD = libfast.la joints/libjoints.la
-
-
-# please, let's keep the filenames sorted
-libode_la_SOURCES =     array.cpp array.h \
->>>>>>> parent of c757c4e1... renamed globally ode to ode-dbl
                         box.cpp \
                         capsule.cpp \
                         collision_cylinder_box.cpp \
@@ -110,7 +99,6 @@ endif
 
 if GIMPACT
 AM_CPPFLAGS += -DdTRIMESH_ENABLED -DdTRIMESH_GIMPACT -I$(top_srcdir)/GIMPACT/include
-<<<<<<< HEAD
 
 libode_la_LIBADD += $(top_builddir)/GIMPACT/src/libGIMPACT.la
 libode_la_SOURCES +=    collision_trimesh_gimpact.cpp \
@@ -119,12 +107,6 @@ libode_la_SOURCES +=    collision_trimesh_gimpact.cpp \
                         gimpact_gim_contact_accessor.h \
                         gimpact_plane_contact_accessor.h \
                         collision_trimesh_trimesh.cpp \
-=======
-libode_la_SOURCES+= collision_trimesh_gimpact.cpp
-
-libode_la_LIBADD += $(top_builddir)/GIMPACT/src/libGIMPACT.la
-libode_la_SOURCES +=    collision_trimesh_trimesh.cpp \
->>>>>>> parent of c757c4e1... renamed globally ode to ode-dbl
                         collision_trimesh_sphere.cpp \
                         collision_trimesh_ray.cpp \
                         collision_trimesh_box.cpp \
@@ -147,15 +129,10 @@ AM_CPPFLAGS += -I$(top_srcdir)/OPCODE -I$(top_srcdir)/OPCODE/Ice -DdTRIMESH_ENAB
 libode_la_LIBADD += $(top_builddir)/OPCODE/libOPCODE.la \
                     $(top_builddir)/OPCODE/Ice/libIce.la
 
-<<<<<<< HEAD
 libode_la_SOURCES+=     collision_trimesh_opcode.cpp \
                         collision_trimesh_internal.cpp collision_trimesh_internal_impl.h \
                         collision_trimesh_trimesh.cpp \
                         collision_trimesh_trimesh_old.cpp \
-=======
-libode_la_SOURCES+=     collision_trimesh_trimesh.cpp \
-                        collision_trimesh_trimesh_new.cpp \
->>>>>>> parent of c757c4e1... renamed globally ode to ode-dbl
                         collision_trimesh_sphere.cpp \
                         collision_trimesh_ray.cpp \
                         collision_trimesh_box.cpp \

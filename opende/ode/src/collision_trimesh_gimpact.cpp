@@ -20,20 +20,7 @@
  *                                                                       *
  *************************************************************************/
 
-<<<<<<< HEAD
 // TriMesh storage classes refactoring and face angle computation code by Oleh Derevenko (C) 2016-2017
-=======
-#include <ode/collision.h>
-#include <ode/matrix.h>
-#include <ode/rotation.h>
-#include <ode/odemath.h>
-#include "config.h"
-
-#if dTRIMESH_ENABLED
-
-#include "collision_util.h"
-#include "collision_trimesh_internal.h"
->>>>>>> parent of c757c4e1... renamed globally ode to ode-dbl
 
 #include <ode/collision.h>
 #include <ode/rotation.h>

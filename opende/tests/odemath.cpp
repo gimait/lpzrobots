@@ -24,11 +24,7 @@
 
 #include <UnitTest++.h>
 #include <ode/ode.h>
-<<<<<<< HEAD
 #include <ode/odemath.h>
-=======
-#include "ode/odemath.h"
->>>>>>> parent of c757c4e1... renamed globally ode to ode-dbl
 
 
 

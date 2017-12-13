@@ -20,45 +20,9 @@
  *   Free Software Foundation, Inc.,                                       *
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  *                                                                         *
-<<<<<<< HEAD
-=======
- *   $Log$
- *   Revision 1.8  2008-05-07 16:45:52  martius
- *   code cosmetics and documentation
- *
- *   Revision 1.7  2007/11/07 13:21:16  martius
- *   doInternal stuff changed signature
- *
- *   Revision 1.6  2007/09/06 18:48:00  martius
- *   createNewSimpleSpace used
- *
- *   Revision 1.5  2007/02/13 19:32:20  martius
- *   twoaxisservo
- *
- *   Revision 1.4  2007/01/26 12:05:05  martius
- *   servos combinied into OneAxisServo
- *
- *   Revision 1.3  2006/07/20 17:19:45  martius
- *   removed using namespace std from matrix.h
- *
- *   Revision 1.2  2006/07/14 12:23:42  martius
- *   selforg becomes HEAD
- *
- *   Revision 1.1.2.3  2006/06/25 16:57:50  martius
- *   Id
- *
- *   Revision 1.1.2.2  2006/06/25 16:57:17  martius
- *   abstractrobot is configureable
- *   name and revision
- *
- *   Revision 1.1.2.1  2006/06/10 20:13:49  martius
- *   unknown walking object
- *
- *
->>>>>>> parent of c757c4e1... renamed globally ode to ode-dbl
  ***************************************************************************/
 #include <assert.h>
-#include <ode/ode.h>
+#include <ode-dbl/ode.h>
 
 // include primitives (box, spheres, cylinders ...)
 #include "primitive.h"

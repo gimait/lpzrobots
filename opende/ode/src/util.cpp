@@ -20,12 +20,8 @@
  *                                                                       *
  *************************************************************************/
 
-<<<<<<< HEAD
 #include <ode/ode.h>
 #include "config.h"
-=======
-#include "ode/ode.h"
->>>>>>> parent of c757c4e1... renamed globally ode to ode-dbl
 #include "objects.h"
 #include "joints/joint.h"
 #include "util.h"

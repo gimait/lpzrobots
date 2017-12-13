@@ -40,10 +40,6 @@
 #define _ODE_ARRAY_H_
 
 #include <ode/odeconfig.h>
-<<<<<<< HEAD
-=======
-#include "config.h"
->>>>>>> parent of c757c4e1... renamed globally ode to ode-dbl
 
 
 // this base class has no constructors or destructor, for your convenience.

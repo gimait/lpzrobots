@@ -22,7 +22,6 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  *                                                                         *
  *   $Log$
-<<<<<<< HEAD
  *   Revision 1.6  2011-06-03 13:42:48  martius
  *   oderobot has objects and joints, store and restore works automatically
  *   removed showConfigs and changed deprecated odeagent calls
@@ -31,9 +30,6 @@
  *   renamed globally ode to ode-dbl
  *
  *   Revision 1.4  2009/08/05 22:24:32  martius
-=======
- *   Revision 1.4  2009-08-05 22:24:32  martius
->>>>>>> parent of c757c4e1... renamed globally ode to ode-dbl
  *   includes fixed
  *
  *   Revision 1.3  2009/04/02 12:18:22  fhesse
@@ -52,7 +48,7 @@
 #include <stdio.h>
 
 // include ode library
-#include <ode/ode.h>
+#include <ode-dbl/ode.h>
 
 // include noisegenerator (used for adding noise to sensorvalues)
 #include <selforg/noisegenerator.h>

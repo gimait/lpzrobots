@@ -30,16 +30,10 @@
 
 #include <ode/common.h>
 #include <ode/collision.h>
-<<<<<<< HEAD
 #include <ode/rotation.h>
 #include "config.h"
 #include "matrix.h"
 #include "odemath.h"
-=======
-#include <ode/matrix.h>
-#include <ode/rotation.h>
-#include <ode/odemath.h>
->>>>>>> parent of c757c4e1... renamed globally ode to ode-dbl
 #include "collision_kernel.h"
 #include "collision_std.h"
 #include "collision_util.h"

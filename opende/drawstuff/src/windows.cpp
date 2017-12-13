@@ -23,13 +23,8 @@
 #if defined(WIN32) || defined(__CYGWIN__)// this prevents warnings when dependencies built
 #include <windows.h>
 #endif
-<<<<<<< HEAD
 #include <process.h>
 #include <ode/odeconfig.h>
-=======
-#include <ode/odeconfig.h>
-#include "config.h"
->>>>>>> parent of c757c4e1... renamed globally ode to ode-dbl
 #include <GL/gl.h>
 
 #include "config.h"

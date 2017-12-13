@@ -20,7 +20,6 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  *                                                                         *
  *   $Log$
-<<<<<<< HEAD
  *   Revision 1.4  2011-05-30 13:56:42  martius
  *   clean up: moved old code to oldstuff
  *   configable changed: notifyOnChanges is now used
@@ -30,9 +29,6 @@
  *   renamed globally ode to ode-dbl
  *
  *   Revision 1.2  2008/05/01 22:03:54  martius
-=======
- *   Revision 1.2  2008-05-01 22:03:54  martius
->>>>>>> parent of c757c4e1... renamed globally ode to ode-dbl
  *   build system expanded to allow system wide installation
  *   that implies  <ode_robots/> for headers in simulations
  *
@@ -52,7 +48,7 @@
  *
  ***************************************************************************/
 #include <assert.h>
-#include <ode/ode.h>
+#include <ode-dbl/ode.h>
 
 // include primitives (box, spheres, cylinders ...)
 #include <ode_robots/primitive.h>

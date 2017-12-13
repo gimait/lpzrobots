@@ -578,7 +578,7 @@ namespace qmp_internal
 
                         mPlatform->threads = new pthread_t[numThreads];
                         mPlatform->threads[0] = pthread_self();
-                        for ( intptr_t threadIndex = 1; threadIndex <= numWorkerThreads; ++threadIndex)
+                        for (unsigned int threadIndex = 1; threadIndex <= numWorkerThreads; ++threadIndex)
                         {
                                 returnCode = pthread_create(&mPlatform->threads[threadIndex],
                                         &threadAttributes, threadRoutine, (void*)threadIndex);

@@ -24,16 +24,10 @@
 // With math corrections by Oleh Derevenko. ;)
 
 #include <ode/common.h>
-<<<<<<< HEAD
 #include <ode/collision_space.h>
 #include <ode/collision.h>
 #include "config.h"
 #include "matrix.h"
-=======
-#include <ode/matrix.h>
-#include <ode/collision_space.h>
-#include <ode/collision.h>
->>>>>>> parent of c757c4e1... renamed globally ode to ode-dbl
 #include "collision_kernel.h"
 
 #include "collision_space_internal.h"

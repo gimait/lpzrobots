@@ -23,10 +23,7 @@
 #include <ode/common.h>
 #include <ode/error.h>
 #include <ode/memory.h>
-<<<<<<< HEAD
 #include "config.h"
-=======
->>>>>>> parent of c757c4e1... renamed globally ode to ode-dbl
 #include "obstack.h"
 #include "util.h"
 

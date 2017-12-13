@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 /*************************************************************************
  *                                                                       *
  * Open Dynamics Engine, Copyright (C) 2001,2002 Russell L. Smith.       *
@@ -21,8 +20,6 @@
  *                                                                       *
  *************************************************************************/
 
-=======
->>>>>>> parent of c757c4e1... renamed globally ode to ode-dbl
 #include <ode/ode.h>
 #include <drawstuff/drawstuff.h>
 #include "texturepath.h"

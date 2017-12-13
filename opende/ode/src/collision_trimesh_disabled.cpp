@@ -21,10 +21,6 @@
  *************************************************************************/
 
 #include <ode/collision.h>
-<<<<<<< HEAD
-=======
-#include <ode/matrix.h>
->>>>>>> parent of c757c4e1... renamed globally ode to ode-dbl
 #include "config.h"
 #include "matrix.h"
 

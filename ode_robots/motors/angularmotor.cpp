@@ -20,55 +20,9 @@
  *   Free Software Foundation, Inc.,                                       *
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  *                                                                         *
-<<<<<<< HEAD
-=======
- *  DESCRIPTION                                                            *
- *                                                                         *
- *   $Log$
- *   Revision 1.8  2009-08-10 14:46:41  der
- *   power() functions removed because references are bad vor velocity servo
- *   setPower() functions added
- *
- *   Revision 1.7  2009/05/11 15:43:22  martius
- *   new velocity controlling servo motors
- *
- *   Revision 1.6  2008/05/07 16:45:51  martius
- *   code cosmetics and documentation
- *
- *   Revision 1.5  2007/07/03 13:10:13  martius
- *   initialization of variables
- *
- *   Revision 1.4  2006/09/21 16:15:06  der
- *   *** empty log message ***
- *
- *   Revision 1.3  2006/07/20 17:19:43  martius
- *   removed using namespace std from matrix.h
- *
- *   Revision 1.2  2006/07/14 12:23:32  martius
- *   selforg becomes HEAD
- *
- *   Revision 1.1.2.4  2006/06/29 16:39:55  robot3
- *   -you can now see bounding shapes if you type ./start -drawboundings
- *   -includes cleared up
- *   -abstractobstacle and abstractground have now .cpp-files
- *
- *   Revision 1.1.2.3  2006/02/23 18:05:30  martius
- *   setPower (on all axis the same)
- *
- *   Revision 1.1.2.2  2006/02/07 15:51:56  martius
- *   axis, setpower
- *
- *   Revision 1.1.2.1  2005/12/21 15:38:32  martius
- *   Angular motors nicely wrapped
- *
- *   Revision 1.1.2.1  2005/12/06 17:38:21  martius
- *   *** empty log message ***
- *
- *                                                                 *
->>>>>>> parent of c757c4e1... renamed globally ode to ode-dbl
  ***************************************************************************/
 
-#include <ode/objects.h>
+#include <ode-dbl/objects.h>
 #include "mathutils.h"
 #include "angularmotor.h"
 #include "odehandle.h"

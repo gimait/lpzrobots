@@ -57,7 +57,7 @@ list<AbstractPlotChannel*> GroupPlotChannel::getChannelsOfGroup() {
 }
 
 AbstractPlotChannel* GroupPlotChannel::at(int pos){
-  if((unsigned int)pos>=channelsOfGroup.size()){
+  if(pos>=channelsOfGroup.size()){
     std::cerr << " error: GroupPlotChannel::at " << pos << "/" << channelsOfGroup.size() << std::endl;  
     return 0;                                                                                                
   }

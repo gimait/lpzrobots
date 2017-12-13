@@ -34,10 +34,6 @@
  */
 
 #include <ode/common.h>
-<<<<<<< HEAD
-=======
-#include <ode/matrix.h>
->>>>>>> parent of c757c4e1... renamed globally ode to ode-dbl
 #include <ode/collision_space.h>
 #include <ode/collision.h>
 

@@ -29,10 +29,7 @@
 #include <ode/common.h>
 #include <ode/memory.h>
 #include <ode/mass.h>
-<<<<<<< HEAD
 #include "error.h"
-=======
->>>>>>> parent of c757c4e1... renamed globally ode to ode-dbl
 #include "array.h"
 #include "threading_base.h"
 

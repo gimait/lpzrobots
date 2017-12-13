@@ -15,7 +15,6 @@ class Prototype;
 class IValue;
 
 struct RESTORE_GA_HEAD {
-    RESTORE_GA_HEAD() : generationNumber(0), cleanStrategies(false), numIndividuals(0), numGeneration(0), numGenes(0){}
   union {
     struct{
       int generationNumber;

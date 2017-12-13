@@ -21,17 +21,10 @@
  *************************************************************************/
 
 #include <ode/odeconfig.h>
-<<<<<<< HEAD
 #include <ode/mass.h>
 #include "config.h"
 #include "matrix.h"
 #include "odemath.h"
-=======
-#include "config.h"
-#include <ode/mass.h>
-#include <ode/odemath.h>
-#include <ode/matrix.h>
->>>>>>> parent of c757c4e1... renamed globally ode to ode-dbl
 
 // Local dependencies
 #include "collision_kernel.h"

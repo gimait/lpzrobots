@@ -20,32 +20,13 @@
  *   Free Software Foundation, Inc.,                                       *
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  *                                                                         *
-<<<<<<< HEAD
-=======
- *  DESCRIPTION                                                            *
- *                                                                         *
- *   $Log$
- *   Revision 1.3  2007-07-17 07:18:19  martius
- *   setMass added (dummy)
- *
- *   Revision 1.2  2006/07/14 12:23:34  martius
- *   selforg becomes HEAD
- *
- *   Revision 1.1.2.1  2006/05/28 22:14:56  martius
- *   heightfield included
- *
- *   Revision 1.1.2.1  2005/12/06 17:38:21  martius
- *   *** empty log message ***
- *
- *                                                                 *
->>>>>>> parent of c757c4e1... renamed globally ode to ode-dbl
  ***************************************************************************/
 #ifndef __HEIGHTFIELDPRIMITIVES_H
 #define __HEIGHTFIELDPRIMITIVES_H
 
 #include "primitive.h"
 #include "osgheightfield.h"
-#include <ode/ode.h>
+#include <ode-dbl/ode.h>
 
 namespace lpzrobots {
 
